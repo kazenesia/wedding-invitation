@@ -20,13 +20,16 @@ function getUrlParameter(name) {
         return paramValue;
     }
     
-    // 2. Fallback for Vercel Clean URLs (/mella-bram/Budi)
+    // 2. Fallback for Vercel Clean URLs (e.g. /Budi)
     // Only check if looking for 'to' parameter
     if (name === 'to') {
-        const pathMatch = window.location.pathname.match(/\/mella-bram\/([^/?#]+)/);
-        if (pathMatch && pathMatch[1]) {
-            // Decode URI component because URLs might be encoded (e.g. Budi%20Santoso)
-            return decodeURIComponent(pathMatch[1]);
+        // Match single path segment, ignoring root '/' and avoiding asset paths
+        const path = window.location.pathname;
+        if (path !== '/' && !path.startsWith('/assets') && !path.startsWith('/css') && !path.startsWith('/js')) {
+            const pathMatch = path.match(/^\/([^/?#]+)/);
+            if (pathMatch && pathMatch[1]) {
+                return decodeURIComponent(pathMatch[1]);
+            }
         }
     }
     
