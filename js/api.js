@@ -504,10 +504,10 @@ requestQueue.load();
 /**
  * Detect online/offline status
  */
-let isOnline = navigator.onLine;
+let apiIsOnline = navigator.onLine;
 
 window.addEventListener('online', () => {
-    isOnline = true;
+    apiIsOnline = true;
     log('Connection restored');
     
     // Process queued requests
@@ -520,7 +520,7 @@ window.addEventListener('online', () => {
 });
 
 window.addEventListener('offline', () => {
-    isOnline = false;
+    apiIsOnline = false;
     log('Connection lost');
     showNotification('Koneksi internet terputus', 'error');
 });
@@ -532,7 +532,7 @@ window.addEventListener('offline', () => {
  * Submit RSVP dengan auto-queue jika offline
  */
 async function submitRSVPSafe(rsvpData) {
-    if (!isOnline) {
+    if (!apiIsOnline) {
         requestQueue.add('rsvp', rsvpData);
         return {
             success: true,
@@ -560,7 +560,7 @@ async function submitRSVPSafe(rsvpData) {
  * Submit Wish dengan auto-queue jika offline
  */
 async function submitWishSafe(wishData) {
-    if (!isOnline) {
+    if (!apiIsOnline) {
         requestQueue.add('wish', wishData);
         return {
             success: true,
