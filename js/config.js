@@ -334,7 +334,7 @@ const CONFIG = {
         keywords: 'undangan pernikahan, wedding invitation, digital invitation',
         author: 'Bride & Groom',
         ogImage: 'assets/images/cover.jpg', // Image untuk preview di WhatsApp/FB
-        url: 'https://wedding-invitation.vercel.app' // Base URL setelah deploy
+        url: 'https://theweddingof-mella-bram.vercel.app' // Base URL setelah deploy
     },
     
     // ============================================
