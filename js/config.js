@@ -25,7 +25,7 @@ const CONFIG = {
         fullName: 'Mella Anaya Rahmani',   // Nama lengkap
         parents: 'Bapak Moch. Andi Rahman & Ibu Ika Fatmawati',                  // Nama orang tua
         instagram: 'https://instagram.com/mella.anayaa',    // Instagram URL
-        photo: 'assets/images/bride.jpg'             // Path foto mempelai wanita
+        photo: 'assets/images/bride.webp'             // Path foto mempelai wanita
     },
     
     GROOM: {
@@ -33,7 +33,7 @@ const CONFIG = {
         fullName: 'Bram Aji Saka Putra',     // Nama lengkap
         parents: 'Bapak Hadi Kuswanto & Almh. Ibu Watini',                  // Nama orang tua
         instagram: 'https://instagram.com/brama.ji__',    // Instagram URL
-        photo: 'assets/images/groom.jpg'             // Path foto mempelai pria
+        photo: 'assets/images/groom.webp'             // Path foto mempelai pria
     },
     
     // Nama couple untuk tampilan (akan digabung)
@@ -333,7 +333,7 @@ const CONFIG = {
         description: 'Undangan Pernikahan Digital - Mella & Bram. 05 Juni 2026',
         keywords: 'undangan pernikahan, wedding invitation, digital invitation',
         author: 'Bride & Groom',
-        ogImage: 'assets/images/cover.jpg', // Image untuk preview di WhatsApp/FB
+        ogImage: 'assets/images/cover.webp', // Image untuk preview di WhatsApp/FB
         url: 'https://theweddingof-mella-bram.vercel.app' // Base URL setelah deploy
     },
     
