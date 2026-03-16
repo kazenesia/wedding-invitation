@@ -18,10 +18,8 @@ async function getGuestData(slug) {
         const url = API_ENDPOINTS.getGuest(slug);
         
         const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            method: 'GET'
+            // No custom headers allowed to bypass CORS preflight on Google Apps Script
         });
         
         if (!response.ok) {
@@ -79,7 +77,7 @@ async function submitRSVP(rsvpData) {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'text/plain;charset=utf-8' // Use text/plain to avoid CORS preflight
             },
             body: JSON.stringify({
                 slug: rsvpData.slug,
@@ -144,7 +142,7 @@ async function submitWish(wishData) {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'text/plain;charset=utf-8' // Use text/plain to avoid CORS preflight
             },
             body: JSON.stringify(sanitizedData)
         });
@@ -183,10 +181,8 @@ async function getAllWishes() {
         const url = API_ENDPOINTS.getWishes();
         
         const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            method: 'GET'
+            // No custom headers allowed to bypass CORS preflight on Google Apps Script
         });
         
         if (!response.ok) {
