@@ -12,8 +12,25 @@
  * getUrlParameter('to') akan return 'john-doe'
  */
 function getUrlParameter(name) {
+    // 1. Try standard query parameter (e.g. ?to=Budi)
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(name);
+    const paramValue = urlParams.get(name);
+    
+    if (paramValue) {
+        return paramValue;
+    }
+    
+    // 2. Fallback for Vercel Clean URLs (/mella-bram/Budi)
+    // Only check if looking for 'to' parameter
+    if (name === 'to') {
+        const pathMatch = window.location.pathname.match(/\/mella-bram\/([^/?#]+)/);
+        if (pathMatch && pathMatch[1]) {
+            // Decode URI component because URLs might be encoded (e.g. Budi%20Santoso)
+            return decodeURIComponent(pathMatch[1]);
+        }
+    }
+    
+    return null;
 }
 
 // ============================================
