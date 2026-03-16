@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/mella-bram/:guestname",
-      "destination": "/?to=:guestname"
+      "source": "/(?!assets|css|js|favicon.ico)([^/]+)",
+      "destination": "/?to=$1"
     }
   ],
   "headers": [
