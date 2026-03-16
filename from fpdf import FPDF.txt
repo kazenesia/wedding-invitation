@@ -1,0 +1,609 @@
+from fpdf import FPDF
+import matplotlib.pyplot as plt
+import io
+from datetime import datetime
+
+class PDFReportGenerator:
+    """Generate professional PDF reports dengan AI-generated insights"""
+    
+    def __init__(self, config: SalesConfig):
+        self.config = config
+        self.pdf = None
+        self.ai_insights = AIInsightsGenerator(config)
+        
+    def generate_full_report(self, results: Dict, filename: str = "executive_report.pdf"):
+        """Generate laporan PDF lengkap"""
+        
+        self.pdf = FPDF()
+        self.pdf.set_auto_page_break(auto=True, margin=15)
+        
+        # Add cover page
+        self._add_cover_page()
+        
+        # Add executive summary dengan AI narrative
+        self._add_executive_summary(results)
+        
+        # Add financial highlights
+        self._add_financial_highlights(results)
+        
+        # Add detailed analysis sections
+        self._add_product_analysis_section(results)
+        self._add_customer_analysis_section(results)
+        self._add_geographic_analysis_section(results)
+        
+        # Add charts
+        self._add_charts_section(results)
+        
+        # Add recommendations
+        self._add_strategic_recommendations(results)
+        
+        # Save
+        self.pdf.output(filename)
+        print(f"✅ PDF Report generated: {filename}")
+        return filename
+    
+    def _add_cover_page(self):
+        """Halaman sampul profesional"""
+        
+        self.pdf.add_page()
+        self.pdf.set_fill_color(68, 114, 196)  # Blue header
+        self.pdf.rect(0, 0, 220, 60, 'F')
+        
+        # Title
+        self.pdf.set_font('Arial', 'B', 28)
+        self.pdf.set_text_color(255, 255, 255)
+        self.pdf.set_xy(10, 20)
+        self.pdf.cell(0, 10, self.config.company_name.upper(), ln=True, align='C')
+        
+        self.pdf.set_font('Arial', '', 16)
+        self.pdf.set_xy(10, 35)
+        self.pdf.cell(0, 10, "EXECUTIVE SALES REPORT", ln=True, align='C')
+        
+        # Date
+        self.pdf.set_text_color(100, 100, 100)
+        self.pdf.set_font('Arial', '', 12)
+        self.pdf.set_xy(10, 70)
+        self.pdf.cell(0, 10, f"Report Generated: {datetime.now().strftime('%B %d, %Y')}", ln=True, align='C')
+        self.pdf.cell(0, 10, f"Reporting Period: {self._get_reporting_period()}", ln=True, align='C')
+        
+        # Confidential notice
+        self.pdf.set_y(-40)
+        self.pdf.set_font('Arial', 'I', 8)
+        self.pdf.set_text_color(150, 150, 150)
+        self.pdf.cell(0, 10, "CONFIDENTIAL - FOR INTERNAL USE ONLY", ln=True, align='C')
+    
+    def _get_reporting_period(self) -> str:
+        """Get reporting period string"""
+        return "Fiscal Year 2024"  # Could be dynamic based on data
+    
+    def _add_executive_summary(self, results: Dict):
+        """Executive summary dengan AI-generated narrative"""
+        
+        self.pdf.add_page()
+        self.pdf.set_font('Arial', 'B', 16)
+        self.pdf.set_text_color(68, 114, 196)
+        self.pdf.cell(0, 10, "EXECUTIVE SUMMARY", ln=True, spacing=1)
+        self.pdf.ln(5)
+        
+        # Get AI-generated insights
+        insights_text = self.ai_insights.generate_executive_summary(results)
+        
+        # Parse dan format sections
+        sections = insights_text.split('\n\n')
+        
+        for section in sections:
+            lines = section.strip().split('\n')
+            if not lines:
+                continue
+            
+            # Section header (ALL CAPS lines)
+            if lines[0].isupper() and len(lines[0]) < 100:
+                self.pdf.set_font('Arial', 'B', 12)
+                self.pdf.set_text_color(68, 114, 196)
+                self.pdf.cell(0, 8, lines[0], ln=True)
+                self.pdf.ln(2)
+                content_lines = lines[1:]
+            else:
+                content_lines = lines
+            
+            # Content
+            self.pdf.set_font('Arial', '', 10)
+            self.pdf.set_text_color(50, 50, 50)
+            
+            for line in content_lines:
+                if line.strip():
+                    # Bullet points
+                    if line.strip().startswith(('•', '-', '1.', '2.', '3.', '4.', '5.')):
+                        self.pdf.set_x(20)
+                        self.pdf.multi_cell(0, 6, line.strip())
+                    else:
+                        self.pdf.multi_cell(0, 6, line.strip())
+            
+            self.pdf.ln(3)
+    
+    def _add_financial_highlights(self, results: Dict):
+        """Financial highlights table"""
+        
+        self.pdf.add_page()
+        self.pdf.set_font('Arial', 'B', 16)
+        self.pdf.set_text_color(68, 114, 196)
+        self.pdf.cell(0, 10, "FINANCIAL HIGHLIGHTS", ln=True, spacing=1)
+        self.pdf.ln(5)
+        
+        overview = results.get('overview', {})
+        
+        # Create metrics table
+        metrics = [
+            ["Total Revenue", f"{self.config.currency_symbol}{overview.get('total_revenue', 0):,.2f}"],
+            ["Gross Profit", f"{self.config.currency_symbol}{overview.get('total_profit', 0):,.2f}"],
+            ["Profit Margin", f"{overview.get('overall_profit_margin', 0):.2f}%"],
+            ["Total Orders", f"{overview.get('total_orders', 0):,}"],
+            ["Average Order Value", f"{self.config.currency_symbol}{overview.get('avg_order_value', 0):,.2f}"],
+            ["Unique Customers", f"{overview.get('unique_customers', 0):,}"],
+            ["Total Units Sold", f"{overview.get('total_quantity', 0):,}"],
+        ]
+        
+        # Table header
+        self.pdf.set_fill_color(68, 114, 196)
+        self.pdf.set_text_color(255, 255, 255)
+        self.pdf.set_font('Arial', 'B', 11)
+        self.pdf.cell(95, 10, "Metric", 1, 0, 'C', True)
+        self.pdf.cell(95, 10, "Value", 1, 1, 'C', True)
+        
+        # Table rows
+        self.pdf.set_text_color(50, 50, 50)
+        self.pdf.set_font('Arial', '', 10)
+        
+        fill = False
+        for metric, value in metrics:
+            if fill:
+                self.pdf.set_fill_color(240, 240, 240)
+            else:
+                self.pdf.set_fill_color(255, 255, 255)
+            
+            self.pdf.cell(95, 8, metric, 1, 0, 'L', True)
+            self.pdf.cell(95, 8, str(value), 1, 1, 'R', True)
+            fill = not fill
+        
+        # Add YoY comparison placeholder
+        self.pdf.ln(10)
+        self.pdf.set_font('Arial', 'I', 9)
+        self.pdf.set_text_color(100, 100, 100)
+        self.pdf.cell(0, 5, "Note: Year-over-year comparison requires historical data integration", ln=True)
+    
+    def _add_product_analysis_section(self, results: Dict):
+        """Product analysis section"""
+        
+        self.pdf.add_page()
+        self.pdf.set_font('Arial', 'B', 16)
+        self.pdf.set_text_color(68, 114, 196)
+        self.pdf.cell(0, 10, "PRODUCT PERFORMANCE ANALYSIS", ln=True, spacing=1)
+        self.pdf.ln(5)
+        
+        product_data = results.get('product_analysis', {})
+        
+        if not product_data or 'top_by_revenue' not in product_data:
+            self.pdf.set_font('Arial', '', 10)
+            self.pdf.cell(0, 10, "Product data unavailable for this reporting period.", ln=True)
+            return
+        
+        # Top products table
+        self.pdf.set_font('Arial', 'B', 12)
+        self.pdf.set_text_color(50, 50, 50)
+        self.pdf.cell(0, 8, "Top 10 Products by Revenue", ln=True)
+        self.pdf.ln(2)
+        
+        # Table header
+        self.pdf.set_fill_color(68, 114, 196)
+        self.pdf.set_text_color(255, 255, 255)
+        self.pdf.set_font('Arial', 'B', 9)
+        self.pdf.cell(80, 8, "Product Name", 1, 0, 'C', True)
+        self.pdf.cell(30, 8, "Revenue", 1, 0, 'C', True)
+        self.pdf.cell(25, 8, "Quantity", 1, 0, 'C', True)
+        self.pdf.cell(25, 8, "Orders", 1, 0, 'C', True)
+        self.pdf.cell(30, 8, "Margin %", 1, 1, 'C', True)
+        
+        # Table data
+        top_products = product_data['top_by_revenue'].head(10)
+        self.pdf.set_text_color(50, 50, 50)
+        self.pdf.set_font('Arial', '', 8)
+        
+        fill = False
+        for idx, row in top_products.iterrows():
+            if fill:
+                self.pdf.set_fill_color(240, 240, 240)
+            else:
+                self.pdf.set_fill_color(255, 255, 255)
+            
+            product_name = str(row.get('product_name', ''))[:35]
+            revenue = row.get('revenue', 0)
+            quantity = row.get('quantity_sold', 0)
+            orders = row.get('orders', 0)
+            margin = row.get('profit_margin', 0)
+            
+            self.pdf.cell(80, 6, product_name, 1, 0, 'L', True)
+            self.pdf.cell(30, 6, f"{self.config.currency_symbol}{revenue:,.0f}", 1, 0, 'R', True)
+            self.pdf.cell(25, 6, f"{quantity:,}", 1, 0, 'R', True)
+            self.pdf.cell(25, 6, f"{orders:,}", 1, 0, 'R', True)
+            self.pdf.cell(30, 6, f"{margin:.1f}%", 1, 1, 'R', True)
+            fill = not fill
+        
+        # Category breakdown
+        if product_data.get('category_metrics') is not None:
+            self.pdf.ln(10)
+            self.pdf.set_font('Arial', 'B', 12)
+            self.pdf.cell(0, 8, "Performance by Category", ln=True)
+            self.pdf.ln(2)
+            
+            cat_data = product_data['category_metrics']
+            self.pdf.set_fill_color(68, 114, 196)
+            self.pdf.set_text_color(255, 255, 255)
+            self.pdf.set_font('Arial', 'B', 9)
+            self.pdf.cell(60, 8, "Category", 1, 0, 'C', True)
+            self.pdf.cell(40, 8, "Revenue", 1, 0, 'C', True)
+            self.pdf.cell(40, 8, "Orders", 1, 0, 'C', True)
+            self.pdf.cell(50, 8, "% of Total", 1, 1, 'C', True)
+            
+            total_rev = cat_data['order_total'].sum() if 'order_total' in cat_data.columns else 1
+            
+            self.pdf.set_text_color(50, 50, 50)
+            self.pdf.set_font('Arial', '', 9)
+            fill = False
+            
+            for idx, row in cat_data.iterrows():
+                if fill:
+                    self.pdf.set_fill_color(240, 240, 240)
+                else:
+                    self.pdf.set_fill_color(255, 255, 255)
+                
+                cat_name = str(row.get('category', ''))[:25]
+                revenue = row.get('order_total', 0)
+                orders = row.get('order_id', 0)
+                pct = (revenue / total_rev * 100) if total_rev > 0 else 0
+                
+                self.pdf.cell(60, 6, cat_name, 1, 0, 'L', True)
+                self.pdf.cell(40, 6, f"{self.config.currency_symbol}{revenue:,.0f}", 1, 0, 'R', True)
+                self.pdf.cell(40, 6, f"{orders:,}", 1, 0, 'R', True)
+                self.pdf.cell(50, 6, f"{pct:.1f}%", 1, 1, 'R', True)
+                fill = not fill
+    
+    def _add_customer_analysis_section(self, results: Dict):
+        """Customer analysis section"""
+        
+        self.pdf.add_page()
+        self.pdf.set_font('Arial', 'B', 16)
+        self.pdf.set_text_color(68, 114, 196)
+        self.pdf.cell(0, 10, "CUSTOMER INTELLIGENCE", ln=True, spacing=1)
+        self.pdf.ln(5)
+        
+        customer_data = results.get('customer_analysis', {})
+        
+        if not customer_data:
+            self.pdf.set_font('Arial', '', 10)
+            self.pdf.cell(0, 10, "Customer data unavailable for this reporting period.", ln=True)
+            return
+        
+        # RFM Segmentation
+        if customer_data.get('rfm_analysis') is not None:
+            self.pdf.set_font('Arial', 'B', 12)
+            self.pdf.set_text_color(50, 50, 50)
+            self.pdf.cell(0, 8, "Customer Segmentation (RFM Analysis)", ln=True)
+            self.pdf.ln(2)
+            
+            segments = customer_data.get('customer_segments', {})
+            total = sum(segments.values()) if segments else 1
+            
+            # Segmentation table
+            self.pdf.set_fill_color(68, 114, 196)
+            self.pdf.set_text_color(255, 255, 255)
+            self.pdf.set_font('Arial', 'B', 9)
+            self.pdf.cell(80, 8, "Segment", 1, 0, 'C', True)
+            self.pdf.cell(40, 8, "Count", 1, 0, 'C', True)
+            self.pdf.cell(40, 8, "Percentage", 1, 0, 'C', True)
+            self.pdf.cell(30, 8, "Priority", 1, 1, 'C', True)
+            
+            segment_colors = {
+                'Champions': (46, 204, 113),
+                'Loyal Customers': (52, 152, 219),
+                'New Customers': (155, 89, 182),
+                'At Risk': (231, 76, 60),
+                'Others': (149, 165, 166)
+            }
+            
+            self.pdf.set_text_color(50, 50, 50)
+            self.pdf.set_font('Arial', '', 9)
+            fill = False
+            
+            for segment, count in sorted(segments.items(), key=lambda x: x[1], reverse=True):
+                if fill:
+                    self.pdf.set_fill_color(240, 240, 240)
+                else:
+                    self.pdf.set_fill_color(255, 255, 255)
+                
+                pct = (count / total * 100) if total > 0 else 0
+                priority = "High" if segment in ['Champions', 'At Risk'] else "Medium" if segment == 'Loyal Customers' else "Low"
+                
+                self.pdf.cell(80, 6, segment, 1, 0, 'L', True)
+                self.pdf.cell(40, 6, f"{count:,}", 1, 0, 'R', True)
+                self.pdf.cell(40, 6, f"{pct:.1f}%", 1, 0, 'R', True)
+                self.pdf.cell(30, 6, priority, 1, 1, 'C', True)
+                fill = not fill
+            
+            # Segment descriptions
+            self.pdf.ln(5)
+            self.pdf.set_font('Arial', 'I', 8)
+            self.pdf.set_text_color(100, 100, 100)
+            descriptions = {
+                'Champions': "High value, frequent, recent buyers - Reward and nurture",
+                'Loyal Customers': "Regular buyers with good value - Upsell opportunities",
+                'New Customers': "Recent first-time buyers - Onboarding critical",
+                'At Risk': "Previously valuable, now inactive - Immediate retention needed"
+            }
+            for seg, desc in descriptions.items():
+                self.pdf.cell(0, 4, f"• {seg}: {desc}", ln=True)
+        
+        # Top customers
+        if customer_data.get('top_customers') is not None:
+            self.pdf.ln(10)
+            self.pdf.set_font('Arial', 'B', 12)
+            self.pdf.set_text_color(50, 50, 50)
+            self.pdf.cell(0, 8, "Top 10 Customers by Value", ln=True)
+            self.pdf.ln(2)
+            
+            top_cust = customer_data['top_customers'].head(10)
+            
+            self.pdf.set_fill_color(68, 114, 196)
+            self.pdf.set_text_color(255, 255, 255)
+            self.pdf.set_font('Arial', 'B', 9)
+            self.pdf.cell(70, 8, "Customer Name", 1, 0, 'C', True)
+            self.pdf.cell(35, 8, "Total Spent", 1, 0, 'C', True)
+            self.pdf.cell(30, 8, "Orders", 1, 0, 'C', True)
+            self.pdf.cell(35, 8, "AOV", 1, 0, 'C', True)
+            self.pdf.cell(30, 8, "Profit", 1, 1, 'C', True)
+            
+            self.pdf.set_text_color(50, 50, 50)
+            self.pdf.set_font('Arial', '', 8)
+            fill = False
+            
+            for idx, row in top_cust.iterrows():
+                if fill:
+                    self.pdf.set_fill_color(240, 240, 240)
+                else:
+                    self.pdf.set_fill_color(255, 255, 255)
+                
+                name = str(row.get('customer_name', ''))[:30]
+                spent = row.get('total_spent', 0)
+                orders = int(row.get('order_count', 0)) if 'order_count' in row else 0
+                aov = row.get('avg_order_value', 0)
+                profit = row.get('total_profit', 0)
+                
+                self.pdf.cell(70, 6, name, 1, 0, 'L', True)
+                self.pdf.cell(35, 6, f"{self.config.currency_symbol}{spent:,.0f}", 1, 0, 'R', True)
+                self.pdf.cell(30, 6, f"{orders:,}", 1, 0, 'R', True)
+                self.pdf.cell(35, 6, f"{self.config.currency_symbol}{aov:,.0f}", 1, 0, 'R', True)
+                self.pdf.cell(30, 6, f"{self.config.currency_symbol}{profit:,.0f}", 1, 1, 'R', True)
+                fill = not fill
+    
+    def _add_geographic_analysis_section(self, results: Dict):
+        """Geographic analysis section"""
+        
+        self.pdf.add_page()
+        self.pdf.set_font('Arial', 'B', 16)
+        self.pdf.set_text_color(68, 114, 196)
+        self.pdf.cell(0, 10, "GEOGRAPHIC PERFORMANCE", ln=True, spacing=1)
+        self.pdf.ln(5)
+        
+        geo_data = results.get('geographic_analysis', {})
+        
+        if not geo_data:
+            self.pdf.set_font('Arial', '', 10)
+            self.pdf.cell(0, 10, "Geographic data unavailable for this reporting period.", ln=True)
+            return
+        
+        # State performance
+        if 'state_metrics' in geo_data:
+            self.pdf.set_font('Arial', 'B', 12)
+            self.pdf.set_text_color(50, 50, 50)
+            self.pdf.cell(0, 8, "Performance by State/Region", ln=True)
+            self.pdf.ln(2)
+            
+            state_data = geo_data['state_metrics']
+            total_rev = state_data['revenue'].sum() if 'revenue' in state_data.columns else 1
+            
+            self.pdf.set_fill_color(68, 114, 196)
+            self.pdf.set_text_color(255, 255, 255)
+            self.pdf.set_font('Arial', 'B', 9)
+            self.pdf.cell(50, 8, "State/Region", 1, 0, 'C', True)
+            self.pdf.cell(40, 8, "Revenue", 1, 0, 'C', True)
+            self.pdf.cell(35, 8, "Orders", 1, 0, 'C', True)
+            self.pdf.cell(35, 8, "Customers", 1, 0, 'C', True)
+            self.pdf.cell(30, 8, "Share", 1, 1, 'C', True)
+            
+            self.pdf.set_text_color(50, 50, 50)
+            self.pdf.set_font('Arial', '', 9)
+            fill = False
+            
+            for idx, row in state_data.iterrows():
+                if fill:
+                    self.pdf.set_fill_color(240, 240, 240)
+                else:
+                    self.pdf.set_fill_color(255, 255, 255)
+                
+                state = str(row.get('state', ''))[:20]
+                revenue = row.get('revenue', 0)
+                orders = row.get('orders', 0)
+                customers = row.get('unique_customers', 0)
+                share = (revenue / total_rev * 100) if total_rev > 0 else 0
+                
+                self.pdf.cell(50, 6, state, 1, 0, 'L', True)
+                self.pdf.cell(40, 6, f"{self.config.currency_symbol}{revenue:,.0f}", 1, 0, 'R', True)
+                self.pdf.cell(35, 6, f"{orders:,}", 1, 0, 'R', True)
+                self.pdf.cell(35, 6, f"{customers:,}", 1, 0, 'R', True)
+                self.pdf.cell(30, 6, f"{share:.1f}%", 1, 1, 'R', True)
+                fill = not fill
+        
+        # Top cities
+        if 'top_cities' in geo_data:
+            self.pdf.ln(10)
+            self.pdf.set_font('Arial', 'B', 12)
+            self.pdf.cell(0, 8, "Top Performing Cities", ln=True)
+            self.pdf.ln(2)
+            
+            city_data = geo_data['top_cities']
+            
+            self.pdf.set_fill_color(68, 114, 196)
+            self.pdf.set_text_color(255, 255, 255)
+            self.pdf.set_font('Arial', 'B', 9)
+            self.pdf.cell(80, 8, "City", 1, 0, 'C', True)
+            self.pdf.cell(50, 8, "Revenue", 1, 0, 'C', True)
+            self.pdf.cell(40, 8, "Orders", 1, 1, 'C', True)
+            
+            self.pdf.set_text_color(50, 50, 50)
+            self.pdf.set_font('Arial', '', 9)
+            fill = False
+            
+            for idx, row in city_data.iterrows():
+                if fill:
+                    self.pdf.set_fill_color(240, 240, 240)
+                else:
+                    self.pdf.set_fill_color(255, 255, 255)
+                
+                city = str(row.get('city', ''))[:35]
+                revenue = row.get('order_total', 0)
+                orders = row.get('order_id', 0)
+                
+                self.pdf.cell(80, 6, city, 1, 0, 'L', True)
+                self.pdf.cell(50, 6, f"{self.config.currency_symbol}{revenue:,.0f}", 1, 0, 'R', True)
+                self.pdf.cell(40, 6, f"{orders:,}", 1, 1, 'R', True)
+                fill = not fill
+    
+    def _add_charts_section(self, results: Dict):
+        """Add visual charts to PDF"""
+        
+        self.pdf.add_page()
+        self.pdf.set_font('Arial', 'B', 16)
+        self.pdf.set_text_color(68, 114, 196)
+        self.pdf.cell(0, 10, "VISUAL ANALYTICS", ln=True, spacing=1)
+        self.pdf.ln(5)
+        
+        # Generate and embed charts
+        charts = []
+        
+        # Chart 1: Revenue Trend
+        if results.get('time_analysis') and 'monthly_trends' in results['time_analysis']:
+            fig, ax = plt.subplots(figsize=(8, 4))
+            monthly = results['time_analysis']['monthly_trends']
+            ax.plot(monthly['year_month'], monthly['order_total'], marker='o', linewidth=2, color='#4472C4')
+            ax.set_title('Monthly Revenue Trend', fontsize=12, fontweight='bold')
+            ax.set_xlabel('Month')
+            ax.set_ylabel('Revenue')
+            ax.tick_params(axis='x', rotation=45)
+            ax.grid(True, alpha=0.3)
+            plt.tight_layout()
+            
+            img_buffer = io.BytesIO()
+            plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+            img_buffer.seek(0)
+            charts.append(('Revenue Trend', img_buffer))
+            plt.close()
+        
+        # Chart 2: Top Products Bar Chart
+        if results.get('product_analysis') and 'top_by_revenue' in results['product_analysis']:
+            fig, ax = plt.subplots(figsize=(8, 4))
+            top_prod = results['product_analysis']['top_by_revenue'].head(5)
+            names = [name[:20] + '...' if len(name) > 20 else name for name in top_prod['product_name']]
+            ax.barh(names, top_prod['revenue'], color='#2ecc71')
+            ax.set_title('Top 5 Products by Revenue', fontsize=12, fontweight='bold')
+            ax.set_xlabel('Revenue')
+            plt.tight_layout()
+            
+            img_buffer = io.BytesIO()
+            plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+            img_buffer.seek(0)
+            charts.append(('Top Products', img_buffer))
+            plt.close()
+        
+        # Chart 3: Customer Segmentation Pie
+        if results.get('customer_analysis') and 'customer_segments' in results['customer_analysis']:
+            segments = results['customer_analysis']['customer_segments']
+            if segments:
+                fig, ax = plt.subplots(figsize=(6, 6))
+                colors = ['#2ecc71', '#3498db', '#9b59b6', '#e74c3c', '#95a5a6']
+                ax.pie(segments.values(), labels=segments.keys(), autopct='%1.1f%%', 
+                       colors=colors[:len(segments)], startangle=90)
+                ax.set_title('Customer Segmentation Distribution', fontsize=12, fontweight='bold')
+                plt.tight_layout()
+                
+                img_buffer = io.BytesIO()
+                plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+                img_buffer.seek(0)
+                charts.append(('Customer Segments', img_buffer))
+                plt.close()
+        
+        # Embed charts in PDF
+        for title, img_buffer in charts:
+            self.pdf.set_font('Arial', 'B', 11)
+            self.pdf.set_text_color(50, 50, 50)
+            self.pdf.cell(0, 8, title, ln=True)
+            self.pdf.image(img_buffer, x=15, w=180)
+            self.pdf.ln(5)
+    
+    def _add_strategic_recommendations(self, results: Dict):
+        """Add strategic recommendations page"""
+        
+        self.pdf.add_page()
+        self.pdf.set_font('Arial', 'B', 16)
+        self.pdf.set_text_color(68, 114, 196)
+        self.pdf.cell(0, 10, "STRATEGIC RECOMMENDATIONS & RISK ASSESSMENT", ln=True, spacing=1)
+        self.pdf.ln(5)
+        
+        # Get AI-generated recommendations
+        insights_text = self.ai_insights.generate_executive_summary(results)
+        
+        # Extract recommendations section
+        if "STRATEGIC RECOMMENDATIONS" in insights_text:
+            rec_section = insights_text.split("STRATEGIC RECOMMENDATIONS")[1]
+            if "RISK ASSESSMENT" in rec_section:
+                rec_section = rec_section.split("RISK ASSESSMENT")[0]
+            
+            self.pdf.set_font('Arial', 'B', 12)
+            self.pdf.set_text_color(46, 204, 113)  # Green
+            self.pdf.cell(0, 8, "PRIORITY ACTIONS", ln=True)
+            self.pdf.ln(2)
+            
+            self.pdf.set_font('Arial', '', 10)
+            self.pdf.set_text_color(50, 50, 50)
+            
+            for line in rec_section.strip().split('\n'):
+                if line.strip() and not line.strip().startswith('STRATEGIC'):
+                    # Numbered items
+                    if line.strip()[0].isdigit():
+                        self.pdf.set_font('Arial', 'B', 10)
+                        self.pdf.cell(0, 6, line.strip(), ln=True)
+                        self.pdf.set_font('Arial', '', 10)
+                    else:
+                        self.pdf.cell(0, 6, line.strip(), ln=True)
+        
+        # Risk Assessment
+        if "RISK ASSESSMENT" in insights_text:
+            risk_section = insights_text.split("RISK ASSESSMENT")[1]
+            
+            self.pdf.ln(10)
+            self.pdf.set_font('Arial', 'B', 12)
+            self.pdf.set_text_color(231, 76, 60)  # Red
+            self.pdf.cell(0, 8, "RISK FACTORS", ln=True)
+            self.pdf.ln(2)
+            
+            self.pdf.set_font('Arial', '', 10)
+            self.pdf.set_text_color(50, 50, 50)
+            
+            for line in risk_section.strip().split('\n'):
+                if line.strip() and not line.strip().startswith('RISK'):
+                    self.pdf.cell(0, 6, line.strip(), ln=True)
+        
+        # Footer
+        self.pdf.set_y(-30)
+        self.pdf.set_font('Arial', 'I', 8)
+        self.pdf.set_text_color(150, 150, 150)
+        self.pdf.cell(0, 5, "This report was generated automatically by AI-powered Sales Analytics System", ln=True, align='C')
+        self.pdf.cell(0, 5, f"© {datetime.now().year} {self.config.company_name} - Confidential", ln=True, align='C')

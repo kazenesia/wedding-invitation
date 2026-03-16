@@ -1,0 +1,17 @@
+wedding-invitation/
++-- index.html
++-- css/
+¦   +-- style.css
++-- js/
+¦   +-- config.js
+¦   +-- api.js
+¦   +-- utils.js
+¦   +-- main.js
++-- assets/
+    +-- images/
+    ¦   +-- cover.jpg
+    ¦   +-- bride.jpg
+    ¦   +-- groom.jpg
+    ¦   +-- gallery/
+    +-- audio/
+        +-- song.mp3
