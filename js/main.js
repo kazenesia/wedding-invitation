@@ -250,6 +250,12 @@ function initEventListeners() {
     // Confetti Observer (Thank You Section)
     initConfettiObserver();
     
+    // Typewriter Quotes Observer
+    initTypewriterEffect();
+    
+    // Heart Rain for Cover
+    initHeartRain();
+    
     log('Event listeners initialized ✓');
 }
 
@@ -257,7 +263,7 @@ function initEventListeners() {
 // 8.5 CONFETTI OBSERVER
 // ============================================
 function initConfettiObserver() {
-    const thankYouSection = document.getElementById('thank-you');
+    const thankYouSection = document.getElementById('thankyou');
     if (!thankYouSection || typeof confetti !== 'function') return;
 
     let hasFired = false;
@@ -304,6 +310,84 @@ function initConfettiObserver() {
 }
 
 // ============================================
+// 8.6 TYPEWRITER EFFECT
+// ============================================
+function initTypewriterEffect() {
+    const quotes = document.querySelectorAll('.typewriter-quote');
+    if (!quotes.length) return;
+
+    // Preserve text and clear contents initially
+    quotes.forEach(quote => {
+        quote.dataset.text = quote.innerText;
+        quote.innerText = '';
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const el = entry.target;
+                if (!el.classList.contains('typing-started')) {
+                    el.classList.add('typing-started');
+                    
+                    const text = el.dataset.text;
+                    let i = 0;
+                    
+                    function type() {
+                        if (i < text.length) {
+                            el.innerHTML += text.charAt(i);
+                            i++;
+                            // INCREASED SPEED: 10ms - 30ms
+                            setTimeout(type, Math.random() * 20 + 10);
+                        } else {
+                            el.classList.add('typing-finished'); // Custom class for finished state if needed
+                        }
+                    }
+                    type();
+                }
+            }
+        });
+    }, { threshold: 0.2 }); // Trigger when 20% visible
+
+    quotes.forEach(quote => observer.observe(quote));
+}
+
+// ============================================
+// 8.7 HEART RAIN EFFECT
+// ============================================
+function initHeartRain() {
+    const container = document.getElementById('heart-container');
+    if (!container) return;
+
+    function createHeart() {
+        const heart = document.createElement('i');
+        heart.classList.add('fas', 'fa-heart', 'falling-heart');
+        
+        // Random position, size, and duration
+        const left = Math.random() * 100;
+        const size = Math.random() * 15 + 10;
+        const duration = Math.random() * 5 + 5;
+        const opacity = Math.random() * 0.4 + 0.1;
+        
+        heart.style.left = `${left}%`;
+        heart.style.fontSize = `${size}px`;
+        heart.style.animationDuration = `${duration}s`;
+        heart.style.opacity = opacity;
+        
+        container.appendChild(heart);
+        
+        // Remove after animation ends
+        setTimeout(() => {
+            heart.remove();
+        }, duration * 1000);
+    }
+
+    // Create hearts periodically
+    const heartInterval = setInterval(() => {
+        createHeart();
+    }, 400);
+}
+
+// ============================================
 // 9. OPEN INVITATION
 // ============================================
 function openInvitation() {
@@ -335,11 +419,34 @@ function openInvitation() {
     
     // Show main content
     if (mainContent) {
-        mainContent.classList.remove('hidden');
+        mainContent.classList.replace('main-content-hidden', 'main-content-visible');
+        
+        // Wait for DOM repaint, then refresh AOS multiple times so it calculates bounds correctly
+        setTimeout(() => {
+            if (typeof AOS !== 'undefined') {
+                AOS.init(CONFIG.SETTINGS.aos); // Re-init to be safe
+                AOS.refresh();
+                log('AOS Re-init & Refresh 1 (100ms)');
+            }
+        }, 100);
+
+        setTimeout(() => {
+            if (typeof AOS !== 'undefined') {
+                AOS.refresh();
+                log('AOS Refresh 2 (500ms)');
+            }
+        }, 500);
         
         // Smooth scroll to hero with slight delay for dramatic effect
         setTimeout(() => {
             smoothScrollTo('hero');
+            // Refresh again after scroll completes
+            setTimeout(() => {
+                if (typeof AOS !== 'undefined') {
+                    AOS.refresh();
+                    log('AOS Refresh 3 (Post-scroll 1.5s)');
+                }
+            }, 1000);
         }, 1200);
     }
     
@@ -355,11 +462,6 @@ function openInvitation() {
     // Start countdown
     if (isFeatureEnabled('showCountdown')) {
         startCountdown();
-    }
-    
-    // Refresh AOS
-    if (typeof AOS !== 'undefined') {
-        AOS.refresh();
     }
     
     isInvitationOpened = true;
