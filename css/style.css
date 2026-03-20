@@ -733,17 +733,19 @@ footer {
     padding-bottom: 3rem;
   }
 
-  /* Music button position */
+  /* Music button position - Moved to TOP-RIGHT for zero overlap with bottom-nav */
   #music-toggle {
-    bottom: 20px;
+    bottom: auto;
+    top: 20px;
     right: 20px;
-    width: 50px;
-    height: 50px;
+    width: 46px;
+    height: 46px;
+    z-index: 200;
   }
 
-  /* Toast notification */
+  /* Toast notification - Moved up for bottom-nav visibility */
   .toast {
-    bottom: 80px;
+    bottom: 110px;
     right: 10px;
     left: 10px;
     min-width: auto;
