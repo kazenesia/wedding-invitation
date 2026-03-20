@@ -108,41 +108,9 @@ function initAnimations() {
     if (typeof AOS !== 'undefined') {
         AOS.init(CONFIG.SETTINGS.aos);
         log('AOS initialized');
+    } else {
+        logWarning('AOS library not found');
     }
-
-    // Init Custom Intersection Observer for Kinetic Text & Advanced Effects
-    initIntersectionObserver();
-}
-
-/**
- * Custom Intersection Observer for animations that need to be more robust than AOS
- */
-function initIntersectionObserver() {
-    const options = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('in-view');
-                // For kinetic typography
-                if (entry.target.classList.contains('text-reveal-kinetic')) {
-                    entry.target.classList.add('animate-reveal');
-                }
-            }
-        });
-    }, options);
-
-    // Observe all kinetic text
-    document.querySelectorAll('.text-reveal-kinetic').forEach(el => observer.observe(el));
-    
-    // Observe all tilt cards (optional tracking)
-    document.querySelectorAll('.tilt-card').forEach(el => observer.observe(el));
-    
-    // Observe sections for staggered animations
-    document.querySelectorAll('section').forEach(el => observer.observe(el));
 }
 
 // ============================================
@@ -170,11 +138,6 @@ async function loadGuestData() {
             
             // Update display
             updateGuestDisplay(currentGuest.nama, currentGuest);
-            
-            // Refresh AOS for kinetic text
-            if (typeof AOS !== 'undefined') {
-                AOS.refresh();
-            }
             
         } else {
             log('Guest not found, using default');
@@ -209,11 +172,6 @@ function updateGuestDisplay(guestName, guestData) {
     // Jika ada data RSVP sebelumnya, tampilkan status
     if (guestData && guestData.rsvp_status) {
         displayPreviousRSVP(guestData);
-    }
-
-    // Refresh AOS for updated text if needed
-    if (typeof AOS !== 'undefined') {
-        AOS.refresh();
     }
 }
 
@@ -289,7 +247,60 @@ function initEventListeners() {
     // Gallery Lightbox
     initLightbox();
     
+    // Confetti Observer (Thank You Section)
+    initConfettiObserver();
+    
     log('Event listeners initialized ✓');
+}
+
+// ============================================
+// 8.5 CONFETTI OBSERVER
+// ============================================
+function initConfettiObserver() {
+    const thankYouSection = document.getElementById('thank-you');
+    if (!thankYouSection || typeof confetti !== 'function') return;
+
+    let hasFired = false;
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && !hasFired) {
+                hasFired = true;
+                
+                // Continuous falling confetti effect
+                const duration = 3000;
+                const end = Date.now() + duration;
+
+                (function frame() {
+                    confetti({
+                        particleCount: 5,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0 },
+                        colors: ['#ffffff', '#f5f5f5', '#d4af37'],
+                        disableForReducedMotion: true
+                    });
+                    confetti({
+                        particleCount: 5,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1 },
+                        colors: ['#ffffff', '#f5f5f5', '#d4af37'],
+                        disableForReducedMotion: true
+                    });
+
+                    if (Date.now() < end) {
+                        requestAnimationFrame(frame);
+                    }
+                }());
+                
+                // We don't disconnect so it can fire again if they scroll up and down?
+                // Actually, let's keep it to fire once per load to not be annoying
+                observer.disconnect();
+            }
+        });
+    }, { threshold: 0.5 });
+
+    observer.observe(thankYouSection);
 }
 
 // ============================================
@@ -302,25 +313,29 @@ function openInvitation() {
     const mainContent = document.getElementById('main-content');
     const musicToggle = document.getElementById('music-toggle');
     
+    // Trigger confetti explosion
+    if (typeof confetti === 'function') {
+        confetti({
+            particleCount: 150,
+            spread: 80,
+            origin: { y: 0.6 },
+            colors: ['#ffffff', '#f5f5f5', '#d4af37'],
+            disableForReducedMotion: true
+        });
+    }
+    
     // Hide cover
     if (cover) {
-        cover.style.transition = 'all 1s ease-in-out';
-        cover.style.transform = 'translateY(-100%)';
-        cover.style.opacity = '0';
+        cover.style.transformOrigin = "top center";
+        cover.style.animation = 'slideUpOut 1s cubic-bezier(0.77, 0, 0.175, 1) forwards';
         setTimeout(() => {
             cover.style.display = 'none';
         }, 1000);
     }
     
-    // Show main content (start slightly hidden to avoid pop-in)
+    // Show main content
     if (mainContent) {
         mainContent.classList.remove('hidden');
-        mainContent.style.opacity = '0';
-        mainContent.style.transition = 'opacity 0.5s ease-in-out';
-        
-        setTimeout(() => {
-            mainContent.style.opacity = '1';
-        }, 100);
         
         // Smooth scroll to hero with slight delay for dramatic effect
         setTimeout(() => {
@@ -337,37 +352,14 @@ function openInvitation() {
         playMusic();
     }
     
-    // Trigger Confetti
-    triggerConfetti();
-    
     // Start countdown
     if (isFeatureEnabled('showCountdown')) {
         startCountdown();
     }
     
-    // Force AOS to recalculate everything now that main-content is visible
+    // Refresh AOS
     if (typeof AOS !== 'undefined') {
-        setTimeout(() => {
-            AOS.init(CONFIG.SETTINGS.aos);
-            AOS.refresh();
-            log('AOS re-initialized and refreshed');
-        }, 100);
-        
-        setTimeout(() => {
-            AOS.refresh();
-            log('AOS secondary refresh');
-            
-            // Safety fallback: Force trigger kinetic titles if AOS fails
-            document.querySelectorAll('.text-reveal-kinetic').forEach(el => {
-                if (!el.classList.contains('aos-animate') && !el.classList.contains('animate-reveal')) {
-                    el.classList.add('animate-reveal');
-                    log('Forced animate-reveal for:', el.innerText.trim());
-                }
-            });
-
-            // Re-init tilt for newly visible elements
-            initTilt();
-        }, 3000); // 3 seconds after opening
+        AOS.refresh();
     }
     
     isInvitationOpened = true;
@@ -717,11 +709,6 @@ async function loadWishes() {
                 <p class="mt-2">${CONFIG.WISHES.errorText}</p>
             </div>
         `;
-    } finally {
-        // Refresh AOS to detect new elements inside container if any
-        if (typeof AOS !== 'undefined') {
-            AOS.refresh();
-        }
     }
 }
 
@@ -739,11 +726,6 @@ function displayWishes(wishes) {
         const wishCard = createWishCard(wish, index);
         wishesContainer.appendChild(wishCard);
     });
-    
-    // Refresh AOS to start animations for new cards
-    if (typeof AOS !== 'undefined') {
-        AOS.refresh();
-    }
     
     log(`Displayed ${wishes.length} wishes`);
 }
@@ -1135,158 +1117,3 @@ log('%cmain.js loaded successfully ✓', 'color: #10b981; font-weight: bold');
 
 // Run browser compatibility check
 checkBrowserCompatibility();
-
-// ============================================
-// 23. ADVANCED ANIMATIONS: PARTICLES, TILT, CONFETTI
-// ============================================
-
-function initAdvancedAnimations() {
-    initParticles();
-    initTilt();
-    initParallax();
-}
-
-function initParticles() {
-    const canvas = document.getElementById('particles-canvas');
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    let particles = [];
-    const particleCount = 30;
-    
-    function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-    
-    window.addEventListener('resize', resize);
-    resize();
-    
-    class Particle {
-        constructor() {
-            this.reset();
-        }
-        
-        reset() {
-            this.x = Math.random() * canvas.width;
-            this.y = canvas.height + Math.random() * 100;
-            this.size = Math.random() * 15 + 5;
-            this.speed = Math.random() * 1 + 0.5;
-            this.opacity = Math.random() * 0.5 + 0.1;
-            this.type = Math.random() > 0.5 ? 'heart' : 'circle';
-        }
-        
-        update() {
-            this.y -= this.speed;
-            if (this.y < -20) {
-                this.reset();
-            }
-        }
-        
-        draw() {
-            ctx.globalAlpha = this.opacity;
-            ctx.fillStyle = '#ffffff';
-            
-            if (this.type === 'heart') {
-                this.drawHeart(this.x, this.y, this.size);
-            } else {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size / 4, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-        
-        drawHeart(x, y, size) {
-            ctx.beginPath();
-            ctx.moveTo(x, y + size / 4);
-            ctx.quadraticCurveTo(x, y, x + size / 4, y);
-            ctx.quadraticCurveTo(x + size / 2, y, x + size / 2, y + size / 4);
-            ctx.quadraticCurveTo(x + size / 2, y + size / 2, x, y + size * 0.75);
-            ctx.quadraticCurveTo(x - size / 2, y + size / 2, x - size / 2, y + size / 4);
-            ctx.quadraticCurveTo(x - size / 2, y, x - size / 4, y);
-            ctx.quadraticCurveTo(x, y, x, y + size / 4);
-            ctx.fill();
-        }
-    }
-    
-    for (let i = 0; i < particleCount; i++) {
-        particles.push(new Particle());
-    }
-    
-    function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        particles.forEach(p => {
-            p.update();
-            p.draw();
-        });
-        requestAnimationFrame(animate);
-    }
-    
-    animate();
-}
-
-function initParallax() {
-    window.addEventListener('scroll', () => {
-        const scrolled = window.pageYOffset;
-        const parallaxEls = document.querySelectorAll('.parallax-el');
-        
-        parallaxEls.forEach(el => {
-            const speed = el.getAttribute('data-parallax-speed') || 0.5;
-            const yPos = -(scrolled * speed);
-            el.style.transform = `translateY(${yPos}px)`;
-        });
-    });
-}
-
-function initTilt() {
-    const cards = document.querySelectorAll('.tilt-card');
-    
-    cards.forEach(card => {
-        card.addEventListener('mousemove', e => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            
-            const rotateX = ((y - centerY) / centerY) * -15; // Increased from 10
-            const rotateY = ((x - centerX) / centerX) * 15;  // Increased from 10
-            
-            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-        });
-        
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg)`;
-        });
-    });
-}
-
-function triggerConfetti() {
-    if (typeof confetti === 'function') {
-        const duration = 3 * 1000;
-        const animationEnd = Date.now() + duration;
-        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-        function randomInRange(min, max) {
-            return Math.random() * (max - min) + min;
-        }
-
-        const interval = setInterval(function() {
-            const timeLeft = animationEnd - Date.now();
-
-            if (timeLeft <= 0) {
-                return clearInterval(interval);
-            }
-
-            const particleCount = 50 * (timeLeft / duration);
-            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
-            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
-        }, 250);
-    }
-}
-
-// Call advanced initializers
-document.addEventListener('DOMContentLoaded', () => {
-    initAdvancedAnimations();
-});
