@@ -121,8 +121,8 @@
           >
             The Wedding of
           </p>
-          <h1 class="font-script text-6xl md:text-8xl mb-4 leading-tight text-glow" data-aos="zoom-in" data-aos-delay="400">
-            Mella & Bram
+          <h1 class="font-script text-6xl md:text-8xl mb-4 leading-tight text-glow text-reveal-kinetic" data-aos="zoom-in" data-aos-delay="400">
+            <span>Mella & Bram</span>
           </h1>
           <p class="text-lg md:text-xl tracking-widest mt-6" data-aos="fade-up" data-aos-delay="600">05 . 06 . 2026</p>
           <div class="w-20 h-px bg-white mx-auto mt-6" data-aos="fade-left" data-aos-delay="700"></div>
@@ -149,7 +149,9 @@
     <!-- ============================================ -->
     <!-- MAIN CONTENT -->
     <!-- ============================================ -->
-    <main id="main-content" class="hidden">
+    <main class="hidden-content overflow-x-hidden">
+      <!-- Particles Background for some sections -->
+      <canvas id="particles-canvas" class="fixed inset-0 pointer-events-none z-0 opacity-40"></canvas>
       <!-- ============================================ -->
       <!-- 1. HERO SECTION -->
       <!-- ============================================ -->
@@ -170,10 +172,10 @@
           </p>
 
           <h2
-            class="font-script text-5xl md:text-7xl text-white mb-8 leading-tight text-glow"
+            class="font-script text-5xl md:text-7xl text-white mb-8 leading-tight text-glow text-reveal-kinetic"
             data-aos="zoom-in" data-aos-delay="400"
           >
-            Mella & Bram
+            <span>Mella & Bram</span>
           </h2>
 
           <div class="w-24 h-px bg-white mx-auto mb-8" data-aos="fade-left"></div>
@@ -220,11 +222,11 @@
             <!-- BRIDE -->
             <div data-aos="fade-right" class="w-full">
               <!-- Photo wrapper -->
-              <div class="couple-photo-wrapper h-[500px] md:h-[600px]">
+              <div class="couple-photo-wrapper h-[500px] md:h-[600px] tilt-card">
                 <img
                   src="assets/images/bride.webp"
                   alt="Bride - Mella Anaya Rahmani"
-                  class="couple-photo"
+                  class="couple-photo tilt-content"
                   loading="lazy"
                 />
               </div>
@@ -253,11 +255,11 @@
             <!-- GROOM -->
             <div data-aos="fade-left" class="w-full">
               <!-- Photo wrapper -->
-              <div class="couple-photo-wrapper h-[500px] md:h-[600px]">
+              <div class="couple-photo-wrapper h-[500px] md:h-[600px] tilt-card">
                 <img
                   src="assets/images/groom.webp"
                   alt="Groom - Bram Aji Saka Putra"
-                  class="couple-photo"
+                  class="couple-photo tilt-content"
                   loading="lazy"
                 />
               </div>
@@ -503,14 +505,14 @@
           <div class="grid md:grid-cols-2 gap-8 md:gap-12">
             <!-- AKAD -->
             <div
-              class="bg-white/10 backdrop-blur-sm border border-white/20 p-8 md:p-10 text-center card-hover"
+              class="bg-white/10 backdrop-blur-sm border border-white/20 p-8 md:p-10 text-center card-hover tilt-card"
               data-aos="fade-up"
             >
-              <div class="mb-6">
+              <div class="mb-6 tilt-content">
                 <i class="fas fa-ring text-white text-5xl animate-floating"></i>
               </div>
-              <div class="w-16 h-px bg-white mx-auto mb-6"></div>
-              <h4 class="font-serif text-3xl text-white mb-6 tracking-wide" data-aos="zoom-in" data-aos-delay="200">
+              <div class="w-16 h-px bg-white mx-auto mb-6 tilt-content"></div>
+              <h4 class="font-serif text-3xl text-white mb-6 tracking-wide tilt-content" data-aos="zoom-in" data-aos-delay="200">
                 Akad Nikah
               </h4>
 
@@ -553,15 +555,15 @@
 
             <!-- RESEPSI -->
             <div
-              class="bg-white/10 backdrop-blur-sm border border-white/20 p-8 md:p-10 text-center card-hover"
+              class="bg-white/10 backdrop-blur-sm border border-white/20 p-8 md:p-10 text-center card-hover tilt-card"
               data-aos="fade-up"
               data-aos-delay="100"
             >
-              <div class="mb-6">
+              <div class="mb-6 tilt-content">
                 <i class="fas fa-glass-cheers text-white text-5xl animate-floating"></i>
               </div>
-              <div class="w-16 h-px bg-white mx-auto mb-6"></div>
-              <h4 class="font-serif text-3xl text-white mb-6 tracking-wide" data-aos="zoom-in" data-aos-delay="300">
+              <div class="w-16 h-px bg-white mx-auto mb-6 tilt-content"></div>
+              <h4 class="font-serif text-3xl text-white mb-6 tracking-wide tilt-content" data-aos="zoom-in" data-aos-delay="300">
                 Resepsi
               </h4>
 
@@ -1201,6 +1203,8 @@
 
     <!-- AOS Animation -->
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
+    <!-- Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <!-- Custom Scripts (defer: parsed after HTML, before DOMContentLoaded) -->
     <script src="js/config.js" defer></script>
