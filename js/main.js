@@ -23,46 +23,61 @@ document.addEventListener('DOMContentLoaded', async function() {
     log('Application initializing...');
     
     try {
-        // Parse wedding date
+        // 1. CRITICAL: Parse wedding date & load guest data immediately for first paint
         weddingDate = parseWeddingDate(CONFIG.WEDDING_DATE);
-        log('Wedding date:', weddingDate);
         
-        // Init music player
+        // Init music player (hidden initially)
         initMusicPlayer();
         
-        // Init AOS animation
-        initAnimations();
-        
-        // Preload critical images (optional)
-        if (CONFIG.SETTINGS.showLoading) {
-            preloadCriticalImages();
-        }
-        
-        // Init event listeners (including Lightbox)
-        initEventListeners();
-        
-        // Load guest data dari URL
+        // Load guest data (needed for cover display)
         await loadGuestData();
         
-        // Load wishes if feature enabled
-        if (isFeatureEnabled('showWishes')) {
-            await loadWishes();
-        }
+        // Init event listeners (Open button, forms, etc.)
+        initEventListeners();
         
-        // Setup lazy load for gallery images
-        setupLazyLoad();
-        
-        // Hide loading screen
+        // Hide loading screen as soon as critical name is ready
         hideLoadingScreen();
         
-        // Prefetch wishes in background
-        if (isFeatureEnabled('showWishes')) {
-            setTimeout(() => {
-                prefetchWishes();
-            }, 2000);
+        // 2. NON-CRITICAL: Defer heavy operations to improve LCP/FCP
+        const lazyInit = async () => {
+            log('Starting lazy initialization...');
+            
+            // Init AOS animation
+            initAnimations();
+            
+            // Load wishes if feature enabled
+            if (isFeatureEnabled('showWishes')) {
+                await loadWishes();
+            }
+            
+            // Setup heart rain in background
+            if (typeof generateHearts === 'function') {
+                generateHearts();
+            }
+            
+            // Setup lazy load for gallery images
+            setupLazyLoad();
+            
+            // Preload critical images in background
+            if (CONFIG.SETTINGS.showLoading) {
+                preloadCriticalImages();
+            }
+            
+            // Prefetch wishes in background
+            if (isFeatureEnabled('showWishes')) {
+                setTimeout(() => {
+                    prefetchWishes();
+                }, 2000);
+            }
+            
+            log('Application initialized successfully ✓');
+        };
+
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(lazyInit, { timeout: 3000 });
+        } else {
+            setTimeout(lazyInit, 1500);
         }
-        
-        log('Application initialized successfully ✓');
         
     } catch (error) {
         logError('Initialization error:', error);
@@ -419,7 +434,7 @@ function openInvitation() {
     
     const cover = document.getElementById('cover');
     const mainContent = document.getElementById('main-content');
-    const musicToggle = document.getElementById('music-toggle');
+    const musicToggle = document.getElementById('music-toggle'); // Original line
     
     // Trigger confetti explosion
     if (typeof confetti === 'function') {
@@ -525,11 +540,6 @@ function playMusic() {
             log('Music playing');
             updateMusicIcon(true);
             localStorage.setItem('wedding_music_state', 'playing');
-            const musicToggle = document.getElementById('music-toggle');
-            if (musicToggle) {
-                musicToggle.classList.remove('fa-volume-mute');
-                musicToggle.classList.add('fa-volume-up', 'pulse-gold');
-            }
         }).catch(error => {
             logError('Error playing music:', error);
             // Auto play sering di-block browser, ini normal
@@ -563,14 +573,14 @@ function updateMusicIcon(isPlaying) {
     
     if (musicIcon) {
         if (isPlaying) {
-            musicIcon.className = 'fas fa-volume-high';
+            musicIcon.className = 'fas fa-volume-up';
             if (musicToggle) {
-                musicToggle.classList.add('playing');
+                musicToggle.classList.add('playing', 'pulse-gold');
             }
         } else {
-            musicIcon.className = 'fas fa-volume-xmark';
+            musicIcon.className = 'fas fa-volume-mute';
             if (musicToggle) {
-                musicToggle.classList.remove('playing');
+                musicToggle.classList.remove('playing', 'pulse-gold');
             }
         }
     }
