@@ -173,6 +173,11 @@ function updateGuestDisplay(guestName, guestData) {
     if (guestData && guestData.rsvp_status) {
         displayPreviousRSVP(guestData);
     }
+
+    // Refresh AOS for updated text if needed
+    if (typeof AOS !== 'undefined') {
+        AOS.refresh();
+    }
 }
 
 // ============================================
@@ -644,6 +649,11 @@ async function loadWishes() {
                 <p class="mt-2">${CONFIG.WISHES.errorText}</p>
             </div>
         `;
+    } finally {
+        // Refresh AOS to detect new elements inside container if any
+        if (typeof AOS !== 'undefined') {
+            AOS.refresh();
+        }
     }
 }
 
@@ -661,6 +671,11 @@ function displayWishes(wishes) {
         const wishCard = createWishCard(wish, index);
         wishesContainer.appendChild(wishCard);
     });
+    
+    // Refresh AOS to start animations for new cards
+    if (typeof AOS !== 'undefined') {
+        AOS.refresh();
+    }
     
     log(`Displayed ${wishes.length} wishes`);
 }
