@@ -108,9 +108,41 @@ function initAnimations() {
     if (typeof AOS !== 'undefined') {
         AOS.init(CONFIG.SETTINGS.aos);
         log('AOS initialized');
-    } else {
-        logWarning('AOS library not found');
     }
+
+    // Init Custom Intersection Observer for Kinetic Text & Advanced Effects
+    initIntersectionObserver();
+}
+
+/**
+ * Custom Intersection Observer for animations that need to be more robust than AOS
+ */
+function initIntersectionObserver() {
+    const options = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('in-view');
+                // For kinetic typography
+                if (entry.target.classList.contains('text-reveal-kinetic')) {
+                    entry.target.classList.add('animate-reveal');
+                }
+            }
+        });
+    }, options);
+
+    // Observe all kinetic text
+    document.querySelectorAll('.text-reveal-kinetic').forEach(el => observer.observe(el));
+    
+    // Observe all tilt cards (optional tracking)
+    document.querySelectorAll('.tilt-card').forEach(el => observer.observe(el));
+    
+    // Observe sections for staggered animations
+    document.querySelectorAll('section').forEach(el => observer.observe(el));
 }
 
 // ============================================
@@ -313,9 +345,29 @@ function openInvitation() {
         startCountdown();
     }
     
-    // Refresh AOS
+    // Force AOS to recalculate everything now that main-content is visible
     if (typeof AOS !== 'undefined') {
-        AOS.refresh();
+        setTimeout(() => {
+            AOS.init(CONFIG.SETTINGS.aos);
+            AOS.refresh();
+            log('AOS re-initialized and refreshed');
+        }, 100);
+        
+        setTimeout(() => {
+            AOS.refresh();
+            log('AOS secondary refresh');
+            
+            // Safety fallback: Force trigger kinetic titles if AOS fails
+            document.querySelectorAll('.text-reveal-kinetic').forEach(el => {
+                if (!el.classList.contains('aos-animate') && !el.classList.contains('animate-reveal')) {
+                    el.classList.add('animate-reveal');
+                    log('Forced animate-reveal for:', el.innerText.trim());
+                }
+            });
+
+            // Re-init tilt for newly visible elements
+            initTilt();
+        }, 3000); // 3 seconds after opening
     }
     
     isInvitationOpened = true;
@@ -1091,6 +1143,7 @@ checkBrowserCompatibility();
 function initAdvancedAnimations() {
     initParticles();
     initTilt();
+    initParallax();
 }
 
 function initParticles() {
@@ -1172,6 +1225,19 @@ function initParticles() {
     animate();
 }
 
+function initParallax() {
+    window.addEventListener('scroll', () => {
+        const scrolled = window.pageYOffset;
+        const parallaxEls = document.querySelectorAll('.parallax-el');
+        
+        parallaxEls.forEach(el => {
+            const speed = el.getAttribute('data-parallax-speed') || 0.5;
+            const yPos = -(scrolled * speed);
+            el.style.transform = `translateY(${yPos}px)`;
+        });
+    });
+}
+
 function initTilt() {
     const cards = document.querySelectorAll('.tilt-card');
     
@@ -1184,8 +1250,8 @@ function initTilt() {
             const centerX = rect.width / 2;
             const centerY = rect.height / 2;
             
-            const rotateX = ((y - centerY) / centerY) * -10;
-            const rotateY = ((x - centerX) / centerX) * 10;
+            const rotateX = ((y - centerY) / centerY) * -15; // Increased from 10
+            const rotateY = ((x - centerX) / centerX) * 15;  // Increased from 10
             
             card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
         });
