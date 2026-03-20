@@ -105,11 +105,11 @@
     <!-- ============================================ -->
     <section
       id="cover"
-      class="fixed inset-0 z-40 bg-cover bg-center flex items-center justify-center"
+      class="fixed inset-0 z-50 bg-black bg-cover bg-center flex items-center justify-center overflow-hidden"
       style="
         background-image:
           linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
-          url(&quot;assets/images/cover.jpg&quot;);
+          url(&quot;assets/images/cover.webp&quot;);
       "
     >
       <div class="relative z-10 text-center text-white px-4">
@@ -149,7 +149,8 @@
     <!-- ============================================ -->
     <!-- MAIN CONTENT -->
     <!-- ============================================ -->
-    <main class="hidden-content overflow-x-hidden">
+    <!-- MAIN CONTENT (hidden by default) -->
+    <main id="main-content" class="hidden overflow-x-hidden">
       <!-- Particles Background for some sections -->
       <canvas id="particles-canvas" class="fixed inset-0 pointer-events-none z-0 opacity-40"></canvas>
       <!-- ============================================ -->
