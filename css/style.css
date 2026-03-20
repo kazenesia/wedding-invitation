@@ -452,6 +452,9 @@ body {
 /* ================================ */
 /* LIGHTBOX GALLERY STYLES */
 /* ================================ */
+.hidden {
+  display: none !important;
+}
 .lightbox {
   display: none;
   position: fixed;
