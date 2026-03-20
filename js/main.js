@@ -280,9 +280,15 @@ function openInvitation() {
         }, 1000);
     }
     
-    // Show main content
+    // Show main content (start slightly hidden to avoid pop-in)
     if (mainContent) {
         mainContent.classList.remove('hidden');
+        mainContent.style.opacity = '0';
+        mainContent.style.transition = 'opacity 0.5s ease-in-out';
+        
+        setTimeout(() => {
+            mainContent.style.opacity = '1';
+        }, 100);
         
         // Smooth scroll to hero with slight delay for dramatic effect
         setTimeout(() => {
