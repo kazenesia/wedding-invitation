@@ -13,11 +13,11 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: smooth; overflow-x: hidden !important;
 }
 
 body {
-  overflow-x: hidden;
+  overflow-x: hidden !important;
   font-family: "Poppins", sans-serif;
   color: #ffffff;
   background-color: #000000;
@@ -492,8 +492,30 @@ button:active {
 
 /* Copy number button explicit hover */
 .btn-copy:hover {
-  background-color: #e5e7eb;
-  color: #000000;
+  background-color: transparent !important;
+  color: #a3a3a3;
+}
+
+/* ================================ */
+/* KINETIC TYPOGRAPHY (WAVE/BREATHE) */
+/* ================================ */
+.kinetic-text {
+  display: block;
+  animation: kineticBreathe 4s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+
+@keyframes kineticBreathe {
+  0% {
+    transform: scale(1) translateY(0);
+    opacity: 0.9;
+    letter-spacing: normal;
+  }
+  100% {
+    transform: scale(1.04) translateY(-4px);
+    opacity: 1;
+    letter-spacing: 1px;
+  }
 }
 
 /* ================================ */
@@ -956,4 +978,322 @@ body {
   animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
   border-color: #ef4444 !important;
   box-shadow: 0 0 10px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* ================================ */
+/* NEW VISUAL ENHANCEMENTS */
+/* ================================ */
+@keyframes slideUpOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-100vh);
+    visibility: hidden;
+  }
+}
+
+.glow-text-custom {
+  animation: glowPulse 2s infinite alternate;
+}
+
+@keyframes glowPulse {
+  0% {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.3);
+  }
+  100% {
+    text-shadow: 0 0 20px rgba(255, 255, 255, 1), 0 0 30px rgba(255, 255, 255, 0.8), 0 0 40px rgba(200, 200, 200, 0.5);
+  }
+}
+
+.kinetic-text {
+  section {
+    page-break-inside: avoid;
+  }
+}
+
+/* ================================ */
+/* CUSTOM ANIMATIONS */
+/* ================================ */
+
+/* Fade in from bottom */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade in from top */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scale in */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Shimmer effect */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* ================================ */
+/* LOADING STATES */
+/* ================================ */
+.loading-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ================================ */
+/* UTILITY CLASSES */
+/* ================================ */
+
+/* Text gradient */
+.text-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #cccccc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow effect */
+.glow {
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.glow-text {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Border gradient */
+.border-gradient {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(#000, #000) padding-box,
+    linear-gradient(135deg, #ffffff, #666666) border-box;
+}
+
+/* ================================ */
+/* SMOOTH REVEAL ANIMATIONS */
+/* ================================ */
+[data-aos] {
+  pointer-events: auto;
+}
+
+/* ================================ */
+/* HIGH CONTRAST MODE */
+/* ================================ */
+@media (prefers-contrast: high) {
+  body {
+    background: #000000;
+    color: #ffffff;
+  }
+
+  button {
+    border: 2px solid #ffffff;
+  }
+
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid #ffffff;
+  }
+}
+
+/* ================================ */
+/* DARK MODE (default adalah dark) */
+/* ================================ */
+body {
+  color-scheme: dark;
+}
+/* ================================ */
+/* FORM VALIDATION ANIMATION */
+/* ================================ */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.shake-error {
+  animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* ================================ */
+/* NEW VISUAL ENHANCEMENTS */
+/* ================================ */
+@keyframes slideUpOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-100vh);
+    visibility: hidden;
+  }
+}
+
+.glow-text-custom {
+  animation: glowPulse 2s infinite alternate;
+}
+
+@keyframes glowPulse {
+  0% {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.3);
+  }
+  100% {
+    text-shadow: 0 0 20px rgba(255, 255, 255, 1), 0 0 30px rgba(255, 255, 255, 0.8), 0 0 40px rgba(200, 200, 200, 0.5);
+  }
+}
+
+.kinetic-text {
+  display: block;
+  animation: kineticBreathe 4s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+
+@keyframes kineticBreathe {
+  0% {
+    transform: scale(1) translateY(0);
+    opacity: 0.9;
+    letter-spacing: normal;
+  }
+  100% {
+    transform: scale(1.05) translateY(-4px);
+    opacity: 1;
+    letter-spacing: 1px;
+  }
+}
+
+.typewriter-quote::after {
+  content: '|';
+  animation: blinkCursor 0.7s infinite;
+  color: #fff;
+  opacity: 1;
+}
+
+.typewriter-quote.typing-finished::after {
+  display: none;
+}
+
+@keyframes blinkCursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ================================ */
+/* FALLING HEARTS ANIMATION */
+/* ================================ */
+.falling-heart {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1.5rem;
+  user-select: none;
+  pointer-events: none;
+  z-index: 100;
+  animation: fall linear forwards, sway ease-in-out infinite alternate;
+}
+
+@keyframes fall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(110vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes sway {
+  0% {
+    margin-left: 0px;
+  }
+  100% {
+    margin-left: 50px;
+  }
+}
+
+/* ================================ */
+/* AOS VISIBILITY FIX */
+/* ================================ */
+.main-content-hidden {
+  opacity: 0;
+  visibility: hidden;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.main-content-visible {
+  opacity: 1;
+  visibility: visible;
+  height: auto;
+  overflow: visible;
+  pointer-events: auto;
+  transition: opacity 0.5s ease;
 }
