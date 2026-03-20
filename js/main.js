@@ -139,6 +139,11 @@ async function loadGuestData() {
             // Update display
             updateGuestDisplay(currentGuest.nama, currentGuest);
             
+            // Refresh AOS for kinetic text
+            if (typeof AOS !== 'undefined') {
+                AOS.refresh();
+            }
+            
         } else {
             log('Guest not found, using default');
             const defaultName = CONFIG.COVER.defaultGuestName;
@@ -267,7 +272,9 @@ function openInvitation() {
     
     // Hide cover
     if (cover) {
-        cover.style.animation = 'fadeOut 1s ease';
+        cover.style.transition = 'all 1s ease-in-out';
+        cover.style.transform = 'translateY(-100%)';
+        cover.style.opacity = '0';
         setTimeout(() => {
             cover.style.display = 'none';
         }, 1000);
@@ -291,6 +298,9 @@ function openInvitation() {
     if (CONFIG.SETTINGS.autoPlayMusic) {
         playMusic();
     }
+    
+    // Trigger Confetti
+    triggerConfetti();
     
     // Start countdown
     if (isFeatureEnabled('showCountdown')) {
@@ -1067,3 +1077,144 @@ log('%cmain.js loaded successfully ✓', 'color: #10b981; font-weight: bold');
 
 // Run browser compatibility check
 checkBrowserCompatibility();
+
+// ============================================
+// 23. ADVANCED ANIMATIONS: PARTICLES, TILT, CONFETTI
+// ============================================
+
+function initAdvancedAnimations() {
+    initParticles();
+    initTilt();
+}
+
+function initParticles() {
+    const canvas = document.getElementById('particles-canvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    const particleCount = 30;
+    
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    
+    window.addEventListener('resize', resize);
+    resize();
+    
+    class Particle {
+        constructor() {
+            this.reset();
+        }
+        
+        reset() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height + Math.random() * 100;
+            this.size = Math.random() * 15 + 5;
+            this.speed = Math.random() * 1 + 0.5;
+            this.opacity = Math.random() * 0.5 + 0.1;
+            this.type = Math.random() > 0.5 ? 'heart' : 'circle';
+        }
+        
+        update() {
+            this.y -= this.speed;
+            if (this.y < -20) {
+                this.reset();
+            }
+        }
+        
+        draw() {
+            ctx.globalAlpha = this.opacity;
+            ctx.fillStyle = '#ffffff';
+            
+            if (this.type === 'heart') {
+                this.drawHeart(this.x, this.y, this.size);
+            } else {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size / 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        drawHeart(x, y, size) {
+            ctx.beginPath();
+            ctx.moveTo(x, y + size / 4);
+            ctx.quadraticCurveTo(x, y, x + size / 4, y);
+            ctx.quadraticCurveTo(x + size / 2, y, x + size / 2, y + size / 4);
+            ctx.quadraticCurveTo(x + size / 2, y + size / 2, x, y + size * 0.75);
+            ctx.quadraticCurveTo(x - size / 2, y + size / 2, x - size / 2, y + size / 4);
+            ctx.quadraticCurveTo(x - size / 2, y, x - size / 4, y);
+            ctx.quadraticCurveTo(x, y, x, y + size / 4);
+            ctx.fill();
+        }
+    }
+    
+    for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle());
+    }
+    
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+            p.update();
+            p.draw();
+        });
+        requestAnimationFrame(animate);
+    }
+    
+    animate();
+}
+
+function initTilt() {
+    const cards = document.querySelectorAll('.tilt-card');
+    
+    cards.forEach(card => {
+        card.addEventListener('mousemove', e => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const rotateX = ((y - centerY) / centerY) * -10;
+            const rotateY = ((x - centerX) / centerX) * 10;
+            
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+        
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg)`;
+        });
+    });
+}
+
+function triggerConfetti() {
+    if (typeof confetti === 'function') {
+        const duration = 3 * 1000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+        function randomInRange(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        const interval = setInterval(function() {
+            const timeLeft = animationEnd - Date.now();
+
+            if (timeLeft <= 0) {
+                return clearInterval(interval);
+            }
+
+            const particleCount = 50 * (timeLeft / duration);
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+        }, 250);
+    }
+}
+
+// Call advanced initializers
+document.addEventListener('DOMContentLoaded', () => {
+    initAdvancedAnimations();
+});
