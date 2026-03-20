@@ -241,6 +241,11 @@ function initEventListeners() {
         const musicToggle = document.getElementById('music-toggle');
         if (musicToggle) {
             musicToggle.addEventListener('click', toggleMusic);
+            // Add pulse if playing already
+            const audioState = localStorage.getItem('wedding_music_state');
+            if (audioState === 'playing') {
+                musicToggle.classList.add('pulse-gold');
+            }
         }
     }
     
@@ -520,6 +525,11 @@ function playMusic() {
             log('Music playing');
             updateMusicIcon(true);
             localStorage.setItem('wedding_music_state', 'playing');
+            const musicToggle = document.getElementById('music-toggle');
+            if (musicToggle) {
+                musicToggle.classList.remove('fa-volume-mute');
+                musicToggle.classList.add('fa-volume-up', 'pulse-gold');
+            }
         }).catch(error => {
             logError('Error playing music:', error);
             // Auto play sering di-block browser, ini normal
@@ -696,6 +706,15 @@ async function handleRSVPSubmit(event) {
                 showNotification(result.message, 'info');
             } else {
                 showNotification(CONFIG.MESSAGES.success.rsvp, 'success');
+                // Luxury Touch: Confetti on success
+                if (typeof confetti === 'function') {
+                    confetti({
+                        particleCount: 150,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        colors: ['#D4AF37', '#ffffff']
+                    });
+                }
             }
             
             // Update current guest data
@@ -776,6 +795,15 @@ async function handleWishSubmit(event) {
                 showNotification(result.message, 'info');
             } else {
                 showNotification(CONFIG.MESSAGES.success.wish, 'success');
+                // Luxury Touch: Confetti on success
+                if (typeof confetti === 'function') {
+                    confetti({
+                        particleCount: 100,
+                        spread: 60,
+                        origin: { y: 0.8 },
+                        colors: ['#D4AF37', '#ffffff']
+                    });
+                }
             }
             
             // Clear form
