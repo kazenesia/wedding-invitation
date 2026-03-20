@@ -316,9 +316,10 @@ function initTypewriterEffect() {
     const quotes = document.querySelectorAll('.typewriter-quote');
     if (!quotes.length) return;
 
-    // Preserve text and clear contents initially
+    // Preserve text and clear contents initially (trim and collapse whitespace)
     quotes.forEach(quote => {
-        quote.dataset.text = quote.innerText;
+        // Use textContent instead of innerText because innerText returns empty string for hidden elements
+        quote.dataset.text = quote.textContent.trim().replace(/\s+/g, ' ');
         quote.innerText = '';
     });
 
@@ -348,7 +349,25 @@ function initTypewriterEffect() {
         });
     }, { threshold: 0.2 }); // Trigger when 20% visible
 
-    quotes.forEach(quote => observer.observe(quote));
+    quotes.forEach(quote => {
+        observer.observe(quote);
+        quote.addEventListener('manual-start', () => {
+            if (!quote.classList.contains('typing-started')) {
+                const el = quote;
+                el.classList.add('typing-started');
+                const text = el.dataset.text;
+                let i = 0;
+                function type() {
+                    if (i < text.length) {
+                        el.innerHTML += text.charAt(i);
+                        i++;
+                        setTimeout(type, Math.random() * 20 + 10);
+                    }
+                }
+                type();
+            }
+        });
+    });
 }
 
 // ============================================
@@ -424,9 +443,14 @@ function openInvitation() {
         // Wait for DOM repaint, then refresh AOS multiple times so it calculates bounds correctly
         setTimeout(() => {
             if (typeof AOS !== 'undefined') {
-                AOS.init(CONFIG.SETTINGS.aos); // Re-init to be safe
+                AOS.init(CONFIG.SETTINGS.aos);
                 AOS.refresh();
                 log('AOS Re-init & Refresh 1 (100ms)');
+                
+                // Trigger typewriter
+                document.querySelectorAll('.typewriter-quote').forEach(q => {
+                    q.dispatchEvent(new CustomEvent('manual-start'));
+                });
             }
         }, 100);
 
@@ -448,6 +472,14 @@ function openInvitation() {
                 }
             }, 1000);
         }, 1200);
+    }
+    
+    // Show Bottom Navigation
+    const bottomNav = document.getElementById('bottom-nav');
+    if (bottomNav) {
+        setTimeout(() => {
+            bottomNav.classList.add('visible');
+        }, 2000);
     }
     
     // Show music toggle
@@ -1219,3 +1251,30 @@ log('%cmain.js loaded successfully ✓', 'color: #10b981; font-weight: bold');
 
 // Run browser compatibility check
 checkBrowserCompatibility();
+// ============================================
+// 12. SCROLLSPY FOR BOTTOM NAV
+// ============================================
+window.addEventListener('scroll', () => {
+    const sections = document.querySelectorAll('section[id]');
+    const navItems = document.querySelectorAll('.nav-item');
+    const bottomNav = document.getElementById('bottom-nav');
+    
+    if (!isInvitationOpened || !bottomNav) return;
+
+    let current = '';
+    
+    sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.clientHeight;
+        if (window.pageYOffset >= sectionTop - 150) {
+            current = section.getAttribute('id');
+        }
+    });
+
+    navItems.forEach(item => {
+        item.classList.remove('active');
+        if (item.getAttribute('href').slice(1) === current) {
+            item.classList.add('active');
+        }
+    });
+});
