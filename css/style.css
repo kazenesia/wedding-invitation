@@ -1359,3 +1359,60 @@ body {
   color: black;
   box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
 }
+
+/* ================================ */
+/* LUXURY REFINEMENTS */
+/* ================================ */
+
+/* Ornamental Dividers */
+.ornamental-divider {
+  position: relative;
+  height: 1px;
+  background: var(--gold-accent);
+  margin: 2rem auto;
+  width: 6rem;
+}
+
+.ornamental-divider::after {
+  content: '\f004'; /* FontAwesome Heart */
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: black;
+  padding: 0 10px;
+  color: var(--gold-accent);
+  font-size: 14px;
+}
+
+/* Interactive Card Lift */
+.card-lift {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card-lift:hover {
+  transform: translateY(-12px) scale(1.02);
+  border-color: var(--gold-accent);
+  box-shadow: 0 15px 40px rgba(212, 175, 55, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Gold Text Utility */
+.text-gold {
+  color: var(--gold-accent);
+}
+
+/* Pulsing Gold Animation */
+@keyframes pulse-gold {
+  0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7); }
+  70% { box-shadow: 0 0 0 15px rgba(212, 175, 55, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+}
+
+.pulse-gold {
+  animation: pulse-gold 2s infinite;
+}
+
