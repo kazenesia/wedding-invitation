@@ -288,10 +288,11 @@ const CONFIG = {
         
         // AOS Animation settings
         aos: {
-            duration: 800,
+            duration: 1000,
             easing: 'ease-in-out',
             once: true,
-            offset: 100
+            offset: 100,
+            mirror: false
         }
     },
     
