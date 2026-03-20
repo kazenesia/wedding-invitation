@@ -1,1292 +1,1458 @@
-// ===================================
-// MAIN APPLICATION LOGIC
-// Wedding Invitation Main Controller
-// Black & White Theme
-// ===================================
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-// ============================================
-// GLOBAL VARIABLES
-// ============================================
-let currentGuest = null;
-let weddingDate = null;
-let countdownInterval = null;
-let musicPlayer = null;
-let isInvitationOpened = false;
+    <!-- FIX VERCEL CLEAN URL ROUTES: Resolve all relative paths from root -->
+    <base href="/" />
 
-// ============================================
-// 1. INIT APPLICATION
-// ============================================
-/**
- * Initialize aplikasi saat page load
- */
-document.addEventListener('DOMContentLoaded', async function() {
-    log('Application initializing...');
-    
-    try {
-        // Parse wedding date
-        weddingDate = parseWeddingDate(CONFIG.WEDDING_DATE);
-        log('Wedding date:', weddingDate);
-        
-        // Init music player
-        initMusicPlayer();
-        
-        // Init AOS animation
-        initAnimations();
-        
-        // Preload critical images (optional)
-        if (CONFIG.SETTINGS.showLoading) {
-            preloadCriticalImages();
-        }
-        
-        // Init event listeners (including Lightbox)
-        initEventListeners();
-        
-        // Load guest data dari URL
-        await loadGuestData();
-        
-        // Load wishes if feature enabled
-        if (isFeatureEnabled('showWishes')) {
-            await loadWishes();
-        }
-        
-        // Setup lazy load for gallery images
-        setupLazyLoad();
-        
-        // Hide loading screen
-        hideLoadingScreen();
-        
-        // Prefetch wishes in background
-        if (isFeatureEnabled('showWishes')) {
-            setTimeout(() => {
-                prefetchWishes();
-            }, 2000);
-        }
-        
-        log('Application initialized successfully ✓');
-        
-    } catch (error) {
-        logError('Initialization error:', error);
-        hideLoadingScreen();
-        showNotification('An error occurred while loading the page', 'error');
-    }
-});
+    <!-- SEO Meta -->
+    <title>Undangan Pernikahan - Mella & Bram</title>
+    <meta
+      name="description"
+      content="Undangan Pernikahan Digital Mella & Bram. 05 Juni 2026, Gempol, Pasuruan."
+    />
+    <meta name="author" content="Mella & Bram" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="canonical" href="https://theweddingof-mella-bram.vercel.app/" />
 
-// ============================================
-// 2. PRELOAD CRITICAL IMAGES
-// ============================================
-async function preloadCriticalImages() {
-    const criticalImages = [
-        CONFIG.IMAGES.cover,
-        CONFIG.IMAGES.bride,
-        CONFIG.IMAGES.groom
-    ];
-    
-    await preloadImages(criticalImages);
-}
+    <!-- Open Graph / WhatsApp Preview -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Undangan Pernikahan Mella & Bram" />
+    <meta
+      property="og:description"
+      content="05 Juni 2026 · Gempol, Pasuruan · Kami mengundang Anda untuk berbagi kebahagiaan bersama kami."
+    />
+    <meta property="og:image" content="assets/images/cover.webp" />
+    <meta
+      property="og:url"
+      content="https://theweddingof-mella-bram.vercel.app/"
+    />
 
-// ============================================
-// 3. HIDE LOADING SCREEN
-// ============================================
-function hideLoadingScreen() {
-    const loading = document.getElementById('loading');
-    
-    setTimeout(() => {
-        if (loading) {
-            loading.style.animation = 'fadeOut 0.5s ease';
-            setTimeout(() => {
-                loading.style.display = 'none';
-            }, 500);
-        }
-    }, CONFIG.SETTINGS.loadingDuration);
-}
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico" />
+    <link rel="shortcut icon" href="assets/favicon/favicon.ico" />
 
-// ============================================
-// 4. INIT ANIMATIONS
-// ============================================
-function initAnimations() {
-    // Init AOS (Animate On Scroll)
-    if (typeof AOS !== 'undefined') {
-        AOS.init(CONFIG.SETTINGS.aos);
-        log('AOS initialized');
-    }
+    <!-- Performance: DNS Prefetch & Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
+    <link rel="dns-prefetch" href="https://unpkg.com" />
+    <link rel="dns-prefetch" href="https://script.google.com" />
 
-    // Init Custom Intersection Observer for Kinetic Text & Advanced Effects
-    initIntersectionObserver();
-}
+    <!-- Performance: Preload Critical Assets -->
+    <link
+      rel="preload"
+      href="assets/images/cover.webp"
+      as="image"
+      fetchpriority="high"
+    />
 
-/**
- * Custom Intersection Observer for animations that need to be more robust than AOS
- */
-function initIntersectionObserver() {
-    const options = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('in-view');
-                // For kinetic typography
-                if (entry.target.classList.contains('text-reveal-kinetic')) {
-                    entry.target.classList.add('animate-reveal');
-                }
-            }
-        });
-    }, options);
+    <!-- Google Fonts (display=swap prevents render blocking) -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&family=Great+Vibes&display=swap"
+      rel="stylesheet"
+    />
 
-    // Observe all kinetic text
-    document.querySelectorAll('.text-reveal-kinetic').forEach(el => observer.observe(el));
-    
-    // Observe all tilt cards (optional tracking)
-    document.querySelectorAll('.tilt-card').forEach(el => observer.observe(el));
-    
-    // Observe sections for staggered animations
-    document.querySelectorAll('section').forEach(el => observer.observe(el));
-}
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
 
-// ============================================
-// 5. LOAD GUEST DATA
-// ============================================
-async function loadGuestData() {
-    // Get slug dari URL parameter
-    const slug = getUrlParameter('to');
-    
-    if (!slug) {
-        log('No guest slug in URL, using default');
-        const defaultName = CONFIG.COVER.defaultGuestName;
-        updateGuestDisplay(defaultName, null);
-        return;
-    }
-    
-    log('Loading guest data for slug:', slug);
-    
-    try {
-        const result = await getGuestData(slug);
-        
-        if (result.success && result.data) {
-            currentGuest = result.data;
-            log('Guest data loaded:', currentGuest);
-            
-            // Update display
-            updateGuestDisplay(currentGuest.nama, currentGuest);
-            
-            // Refresh AOS for kinetic text
-            if (typeof AOS !== 'undefined') {
-                AOS.refresh();
-            }
-            
-        } else {
-            log('Guest not found, using default');
-            const defaultName = CONFIG.COVER.defaultGuestName;
-            updateGuestDisplay(defaultName, null);
-            showNotification('Guest data not found. Using default name.', 'info');
-        }
-        
-    } catch (error) {
-        logError('Error loading guest data:', error);
-        const defaultName = CONFIG.COVER.defaultGuestName;
-        updateGuestDisplay(defaultName, null);
-    }
-}
+    <!-- Font Awesome Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
 
-// ============================================
-// 6. UPDATE GUEST DISPLAY
-// ============================================
-function updateGuestDisplay(guestName, guestData) {
-    // Update di cover section
-    const coverGuestName = document.getElementById('guest-name');
-    if (coverGuestName) {
-        coverGuestName.textContent = guestName;
-    }
-    
-    // Update di RSVP section
-    const rsvpGuestName = document.getElementById('rsvp-guest-name');
-    if (rsvpGuestName) {
-        rsvpGuestName.textContent = guestName;
-    }
-    
-    // Jika ada data RSVP sebelumnya, tampilkan status
-    if (guestData && guestData.rsvp_status) {
-        displayPreviousRSVP(guestData);
-    }
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css" />
 
-    // Refresh AOS for updated text if needed
-    if (typeof AOS !== 'undefined') {
-        AOS.refresh();
-    }
-}
+    <!-- Tailwind Custom Config -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              serif: ["Playfair Display", "serif"],
+              sans: ["Poppins", "sans-serif"],
+              script: ["Great Vibes", "cursive"],
+            },
+            colors: {
+              primary: "#000000",
+              secondary: "#1a1a1a",
+              accent: "#404040",
+              light: "#f5f5f5",
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body
+    class="font-sans bg-cover bg-center bg-fixed bg-black"
+    style="
+      background-image:
+        linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+        url(&quot;assets/images/cover.webp&quot;);
+    "
+  >
+    <!-- ============================================ -->
+    <!-- LOADING SCREEN -->
+    <!-- ============================================ -->
+    <div
+      id="loading"
+      class="fixed inset-0 bg-black z-[100] flex items-center justify-center"
+    >
+      <div class="text-center">
+        <div
+          class="animate-spin rounded-full h-16 w-16 border-t-4 border-white mx-auto mb-4"
+        ></div>
+        <p class="text-white font-serif text-xl">Loading...</p>
+      </div>
+    </div>
 
-// ============================================
-// 7. DISPLAY PREVIOUS RSVP (jika sudah submit)
-// ============================================
-function displayPreviousRSVP(guestData) {
-    if (!isFeatureEnabled('showRSVP')) return;
-    
-    const rsvpForm = document.getElementById('rsvp-form');
-    if (!rsvpForm) return;
-    
-    // Tambahkan info bahwa tamu sudah RSVP
-    const existingInfo = document.getElementById('previous-rsvp-info');
-    if (existingInfo) {
-        existingInfo.remove();
-    }
-    
-    const infoDiv = document.createElement('div');
-    infoDiv.id = 'previous-rsvp-info';
-    infoDiv.className = 'bg-white/10 backdrop-blur-sm border border-white/30 p-5 mb-6';
-    infoDiv.innerHTML = `
-        <div class="flex items-start gap-3 text-white">
-            <i class="fas fa-info-circle text-xl mt-1"></i>
-            <div>
-                <p class="font-semibold mb-2">Previous Confirmation:</p>
-                <p class="text-white/90">Status: <strong>${guestData.rsvp_status}</strong></p>
-                ${guestData.jumlah_hadir > 0 ? `<p class="text-white/90">Guests: <strong>${guestData.jumlah_hadir} person(s)</strong></p>` : ''}
-                <p class="text-white/70 text-sm mt-3">You can update your confirmation below.</p>
-            </div>
+    <!-- ============================================ -->
+    <!-- COVER / OPENING -->
+    <!-- ============================================ -->
+    <section
+      id="cover"
+      class="fixed inset-0 z-50 bg-black bg-cover bg-center flex items-center justify-center overflow-hidden"
+      style="
+        background-image:
+          linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+          url(&quot;assets/images/cover.webp&quot;);
+      "
+    >
+      <div class="relative z-10 text-center text-white px-4">
+        <div class="mb-8">
+          <div
+            class="w-20 h-px bg-white mx-auto mb-6"
+            data-aos="fade-right"
+            data-aos-delay="100"
+          ></div>
+          <p
+            class="text-sm md:text-base mb-6 font-light tracking-[0.3em] uppercase"
+            data-aos="fade-up"
+            data-aos-delay="200"
+          >
+            The Wedding of
+          </p>
+          <h1
+            class="font-script text-3xl md:text-6xl mb-4 p-4 text-glow text-reveal-kinetic"
+            data-aos="zoom-in"
+            data-aos-delay="400"
+          >
+            <span>Mella & Bram</span>
+          </h1>
+          <p
+            class="text-lg md:text-xl tracking-widest mt-6"
+            data-aos="fade-up"
+            data-aos-delay="600"
+          >
+            05 . 06 . 2026
+          </p>
+          <div
+            class="w-20 h-px bg-white mx-auto mt-6"
+            data-aos="fade-left"
+            data-aos-delay="700"
+          ></div>
         </div>
-    `;
-    
-    rsvpForm.insertBefore(infoDiv, rsvpForm.firstChild);
-}
 
-// ============================================
-// 8. INIT EVENT LISTENERS
-// ============================================
-function initEventListeners() {
-    log('Initializing event listeners...');
-    
-    // RSVP Form
-    if (isFeatureEnabled('showRSVP')) {
-        const rsvpForm = document.getElementById('rsvp-form');
-        if (rsvpForm) {
-            rsvpForm.addEventListener('submit', handleRSVPSubmit);
-            
-            // Show/hide attendance count based on selection
-            const rsvpRadios = rsvpForm.querySelectorAll('input[name="rsvp_status"]');
-            rsvpRadios.forEach(radio => {
-                radio.addEventListener('change', handleRSVPStatusChange);
-            });
-        }
-    }
-    
-    // Wish Form
-    if (isFeatureEnabled('showWishes')) {
-        const wishForm = document.getElementById('wish-form');
-        if (wishForm) {
-            wishForm.addEventListener('submit', handleWishSubmit);
-        }
-    }
-    
-    // Music toggle
-    if (isFeatureEnabled('showMusicPlayer')) {
-        const musicToggle = document.getElementById('music-toggle');
-        if (musicToggle) {
-            musicToggle.addEventListener('click', toggleMusic);
-        }
-    }
-    
-    // Gallery Lightbox
-    initLightbox();
-    
-    log('Event listeners initialized ✓');
-}
-
-// ============================================
-// 9. OPEN INVITATION
-// ============================================
-function openInvitation() {
-    log('Opening invitation...');
-    
-    const cover = document.getElementById('cover');
-    const mainContent = document.getElementById('main-content');
-    const musicToggle = document.getElementById('music-toggle');
-    
-    // Hide cover
-    if (cover) {
-        cover.style.transition = 'all 1s ease-in-out';
-        cover.style.transform = 'translateY(-100%)';
-        cover.style.opacity = '0';
-        setTimeout(() => {
-            cover.style.display = 'none';
-        }, 1000);
-    }
-    
-    // Show main content (start slightly hidden to avoid pop-in)
-    if (mainContent) {
-        mainContent.classList.remove('hidden');
-        mainContent.style.opacity = '0';
-        mainContent.style.transition = 'opacity 0.5s ease-in-out';
-        
-        setTimeout(() => {
-            mainContent.style.opacity = '1';
-        }, 100);
-        
-        // Smooth scroll to hero with slight delay for dramatic effect
-        setTimeout(() => {
-            smoothScrollTo('hero');
-        }, 1200);
-    }
-    
-    // Show music toggle
-    if (musicToggle && isFeatureEnabled('showMusicPlayer')) {
-        musicToggle.classList.remove('hidden');
-    }
-    // Play music (trigger on user interaction)
-    if (CONFIG.SETTINGS.autoPlayMusic) {
-        playMusic();
-    }
-    
-    // Trigger Confetti
-    triggerConfetti();
-    
-    // Start countdown
-    if (isFeatureEnabled('showCountdown')) {
-        startCountdown();
-    }
-    
-    // Force AOS to recalculate everything now that main-content is visible
-    if (typeof AOS !== 'undefined') {
-        setTimeout(() => {
-            AOS.init(CONFIG.SETTINGS.aos);
-            AOS.refresh();
-            log('AOS re-initialized and refreshed');
-        }, 100);
-        
-        setTimeout(() => {
-            AOS.refresh();
-            log('AOS secondary refresh');
-            
-            // Safety fallback: Force trigger kinetic titles if AOS fails
-            document.querySelectorAll('.text-reveal-kinetic').forEach(el => {
-                if (!el.classList.contains('aos-animate') && !el.classList.contains('animate-reveal')) {
-                    el.classList.add('animate-reveal');
-                    log('Forced animate-reveal for:', el.innerText.trim());
-                }
-            });
-
-            // Re-init tilt for newly visible elements
-            initTilt();
-        }, 3000); // 3 seconds after opening
-    }
-    
-    isInvitationOpened = true;
-    log('Invitation opened ✓');
-}
-
-// ============================================
-// 10. MUSIC PLAYER
-// ============================================
-function initMusicPlayer() {
-    musicPlayer = document.getElementById('background-music');
-    
-    if (musicPlayer) {
-        musicPlayer.volume = CONFIG.MUSIC.volume;
-        log('Music player initialized');
-    } else {
-        logWarning('Music player element not found');
-    }
-}
-
-function playMusic() {
-    if (musicPlayer) {
-        musicPlayer.play().then(() => {
-            log('Music playing');
-            updateMusicIcon(true);
-            localStorage.setItem('wedding_music_state', 'playing');
-        }).catch(error => {
-            logError('Error playing music:', error);
-            // Auto play sering di-block browser, ini normal
-            logWarning('Music autoplay blocked by browser. User need to click play.');
-        });
-    }
-}
-
-function pauseMusic() {
-    if (musicPlayer) {
-        musicPlayer.pause();
-        log('Music paused');
-        updateMusicIcon(false);
-        localStorage.setItem('wedding_music_state', 'muted');
-    }
-}
-
-function toggleMusic() {
-    if (musicPlayer) {
-        if (musicPlayer.paused) {
-            playMusic();
-        } else {
-            pauseMusic();
-        }
-    }
-}
-
-function updateMusicIcon(isPlaying) {
-    const musicIcon = document.getElementById('music-icon');
-    const musicToggle = document.getElementById('music-toggle');
-    
-    if (musicIcon) {
-        if (isPlaying) {
-            musicIcon.className = 'fas fa-volume-high';
-            if (musicToggle) {
-                musicToggle.classList.add('playing');
-            }
-        } else {
-            musicIcon.className = 'fas fa-volume-xmark';
-            if (musicToggle) {
-                musicToggle.classList.remove('playing');
-            }
-        }
-    }
-}
-
-// ============================================
-// 11. COUNTDOWN TIMER
-// ============================================
-function startCountdown() {
-    if (countdownInterval) {
-        clearInterval(countdownInterval);
-    }
-    
-    // Update immediately
-    updateCountdown();
-    
-    // Then update every second
-    countdownInterval = setInterval(updateCountdown, 1000);
-    
-    log('Countdown started');
-}
-
-function updateCountdown() {
-    const countdown = calculateCountdown(weddingDate);
-    
-    // Update display
-    const daysEl = document.getElementById('days');
-    const hoursEl = document.getElementById('hours');
-    const minutesEl = document.getElementById('minutes');
-    const secondsEl = document.getElementById('seconds');
-    
-    if (daysEl) daysEl.textContent = String(countdown.days).padStart(2, '0');
-    if (hoursEl) hoursEl.textContent = String(countdown.hours).padStart(2, '0');
-    if (minutesEl) minutesEl.textContent = String(countdown.minutes).padStart(2, '0');
-    if (secondsEl) secondsEl.textContent = String(countdown.seconds).padStart(2, '0');
-    
-    // Jika sudah lewat
-    if (countdown.isPast) {
-        clearInterval(countdownInterval);
-        log('Wedding date has passed');
-        
-        // Optional: Update text
-        if (daysEl) daysEl.textContent = '00';
-        if (hoursEl) hoursEl.textContent = '00';
-        if (minutesEl) minutesEl.textContent = '00';
-        if (secondsEl) secondsEl.textContent = '00';
-    }
-}
-
-// ============================================
-// 12. HANDLE RSVP STATUS CHANGE
-// ============================================
-function handleRSVPStatusChange(event) {
-    const status = event.target.value;
-    const attendanceContainer = document.getElementById('attendance-count-container');
-    const attendanceInput = document.getElementById('attendance-count');
-    
-    if (status === 'Hadir') {
-        // Show attendance count
-        if (attendanceContainer) {
-            attendanceContainer.classList.remove('hidden');
-        }
-        if (attendanceInput) {
-            attendanceInput.required = true;
-            attendanceInput.value = 1; // Set default to 1
-        }
-    } else {
-        // Hide attendance count
-        if (attendanceContainer) {
-            attendanceContainer.classList.add('hidden');
-        }
-        if (attendanceInput) {
-            attendanceInput.required = false;
-            attendanceInput.value = 0;
-        }
-    }
-}
-
-// ============================================
-// 13. HANDLE RSVP SUBMIT
-// ============================================
-async function handleRSVPSubmit(event) {
-    event.preventDefault();
-    
-    log('Submitting RSVP...');
-    
-    const form = event.target;
-    const submitButton = form.querySelector('button[type="submit"]');
-    const originalButtonText = submitButton.innerHTML;
-    
-    // Get form data
-    const formData = new FormData(form);
-    const rsvpStatus = formData.get('rsvp_status');
-    const attendanceCountInput = document.getElementById('attendance-count');
-    const attendanceCount = attendanceCountInput ? attendanceCountInput.value : 0;
-    
-    // Validation
-    if (!rsvpStatus) {
-        showNotification(CONFIG.MESSAGES.validation.rsvpRequired, 'error');
-        // Add visual shake effect 
-        const radioGroup = form.querySelector('.grid');
-        if (radioGroup) {
-            radioGroup.classList.add('shake-error');
-            setTimeout(() => radioGroup.classList.remove('shake-error'), 600);
-        }
-        return;
-    }
-    
-    // Get guest slug
-    const slug = getUrlParameter('to') || 'default';
-    
-    if (!currentGuest && slug === 'default') {
-        showNotification(CONFIG.MESSAGES.error.invalidUrl, 'error');
-        return;
-    }
-    
-    // Prepare data
-    const rsvpData = {
-        slug: currentGuest ? currentGuest.slug : slug,
-        rsvp_status: rsvpStatus,
-        jumlah_hadir: rsvpStatus === 'Hadir' ? parseInt(attendanceCount) : 0
-    };
-    
-    // Show loading
-    setButtonLoading(submitButton, true);
-    
-    try {
-        // Submit RSVP
-        const result = await submitRSVPSafe(rsvpData);
-        
-        if (result.success) {
-            if (result.queued) {
-                showNotification(result.message, 'info');
-            } else {
-                showNotification(CONFIG.MESSAGES.success.rsvp, 'success');
-            }
-            
-            // Update current guest data
-            if (currentGuest) {
-                currentGuest.rsvp_status = rsvpStatus;
-                currentGuest.jumlah_hadir = rsvpData.jumlah_hadir;
-                displayPreviousRSVP(currentGuest);
-            }
-            
-            // Scroll to thank you section
-            setTimeout(() => {
-                smoothScrollTo('thankyou');
-            }, 1500);
-            
-        } else {
-            showNotification(result.message || CONFIG.MESSAGES.error.rsvp, 'error');
-        }
-        
-    } catch (error) {
-        logError('RSVP submit error:', error);
-        showNotification(CONFIG.MESSAGES.error.rsvp, 'error');
-    } finally {
-        setButtonLoading(submitButton, false, originalButtonText);
-    }
-}
-
-// ============================================
-// 14. HANDLE WISH SUBMIT
-// ============================================
-async function handleWishSubmit(event) {
-    event.preventDefault();
-    
-    log('Submitting wish...');
-    
-    const form = event.target;
-    const submitButton = form.querySelector('button[type="submit"]');
-    const originalButtonText = submitButton.innerHTML;
-    
-    // Get form data
-    const nameInput = document.getElementById('wish-name');
-    const messageInput = document.getElementById('wish-message');
-    
-    const wishData = {
-        nama: nameInput.value.trim(),
-        ucapan: messageInput.value.trim()
-    };
-    
-    // Validation
-    const validation = validateForm({
-        nama: wishData.nama,
-        ucapan: wishData.ucapan
-    });
-    
-    if (!validation.isValid) {
-        showNotification(validation.errors.join(', '), 'error');
-        
-        // Add visual shake effect to invalid fields
-        if (!wishData.nama && nameInput) {
-            nameInput.classList.add('shake-error');
-            setTimeout(() => nameInput.classList.remove('shake-error'), 600);
-        }
-        if (!wishData.ucapan && messageInput) {
-            messageInput.classList.add('shake-error');
-            setTimeout(() => messageInput.classList.remove('shake-error'), 600);
-        }
-        return;
-    }
-    
-    // Show loading
-    setButtonLoading(submitButton, true);
-    
-    try {
-        // Submit wish
-        const result = await submitWishSafe(wishData);
-        
-        if (result.success) {
-            if (result.queued) {
-                showNotification(result.message, 'info');
-            } else {
-                showNotification(CONFIG.MESSAGES.success.wish, 'success');
-            }
-            
-            // Clear form
-            form.reset();
-            
-            // Reload wishes
-            await loadWishes();
-            
-            // Scroll to wishes container
-            setTimeout(() => {
-                smoothScrollTo('wishes-container');
-            }, 500);
-            
-        } else {
-            showNotification(result.message || CONFIG.MESSAGES.error.wish, 'error');
-        }
-        
-    } catch (error) {
-        logError('Wish submit error:', error);
-        showNotification(CONFIG.MESSAGES.error.wish, 'error');
-    } finally {
-        setButtonLoading(submitButton, false, originalButtonText);
-    }
-}
-
-// ============================================
-// 15. LOAD WISHES
-// ============================================
-async function loadWishes() {
-    if (!isFeatureEnabled('showWishes')) return;
-    
-    log('Loading wishes...');
-    
-    const wishesContainer = document.getElementById('wishes-container');
-    
-    if (!wishesContainer) return;
-    
-    // Show loading
-    wishesContainer.innerHTML = `
-        <div class="text-center text-white/60 py-8">
-            <i class="fas fa-spinner fa-spin text-2xl"></i>
-            <p class="mt-2 tracking-wide">${CONFIG.WISHES.loadingText}</p>
+        <div
+          class="mt-12 mb-8"
+          id="guest-name-container"
+          data-aos="fade-up"
+          data-aos-delay="900"
+        >
+          <p class="text-sm mb-2 tracking-wider">Dear</p>
+          <p class="text-2xl md:text-3xl font-serif" id="guest-name">
+            Tamu Undangan
+          </p>
         </div>
-    `;
-    
-    try {
-        const result = await getWishesWithCache();
-        
-        if (result.success && result.data.length > 0) {
-            displayWishes(result.data);
-        } else {
-            wishesContainer.innerHTML = `
-                <div class="text-center text-white/60 py-8">
-                    <i class="fas fa-comment-slash text-4xl mb-3 text-white/30"></i>
-                    <p>${CONFIG.WISHES.emptyText}</p>
+
+        <button
+          onclick="openInvitation()"
+          data-aos="zoom-in"
+          data-aos-delay="1100"
+          class="mt-6 bg-white text-black px-10 py-4 font-sans text-sm tracking-widest uppercase hover:bg-gray-200 transition duration-300 inline-flex items-center gap-3 btn-shimmer"
+        >
+          <i class="fas fa-envelope-open animate-floating"></i>
+          Open Invitation
+        </button>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ============================================ -->
+    <!-- MAIN CONTENT (hidden by default) -->
+    <main id="main-content" class="hidden overflow-x-hidden">
+      <!-- Particles Background for some sections -->
+      <canvas
+        id="particles-canvas"
+        class="fixed inset-0 pointer-events-none z-0 opacity-40"
+      ></canvas>
+      <!-- ============================================ -->
+      <!-- 1. HERO SECTION -->
+      <!-- ============================================ -->
+      <section
+        id="hero"
+        class="min-h-screen flex items-center justify-center py-20 px-4 relative"
+      >
+        <div class="absolute inset-0 bg-black/40"></div>
+
+        <div class="text-center max-w-4xl relative z-10">
+          <div
+            class="w-24 h-px bg-white mx-auto mb-8"
+            data-aos="fade-right"
+          ></div>
+
+          <p
+            class="text-white text-sm md:text-base mb-6 tracking-[0.3em] uppercase font-light"
+            data-aos="fade-up"
+            data-aos-delay="200"
+          >
+            The Wedding Of
+          </p>
+
+          <h2
+            class="font-script text-5xl md:text-7xl text-white m-4 p-4 leading-tight text-glow text-reveal-kinetic"
+            data-aos="zoom-in"
+            data-aos-delay="400"
+          >
+            <span>Mella & Bram</span>
+          </h2>
+          <p class="text-white/60 text-sm md:text-base tracking-[0.3em] uppercase mb-8" data-aos="fade-up" data-aos-delay="500">The Beginning of Our Forever</p>
+
+          <!-- Parallax element example -->
+          <div
+            class="absolute -z-10 top-0 left-1/2 -translate-x-1/2 w-full h-[150%] opacity-20 parallax-el"
+            data-parallax-speed="0.2"
+          >
+            <div
+              class="w-full h-full bg-gradient-to-b from-white/10 to-transparent blur-3xl"
+            ></div>
+          </div>
+
+          <div
+            class="w-24 h-px bg-white mx-auto mb-8"
+            data-aos="fade-left"
+          ></div>
+
+          <p
+            class="text-white/90 text-base md:text-lg mb-8 italic max-w-2xl mx-auto leading-relaxed"
+            data-aos="fade-up"
+            data-aos-delay="600"
+          >
+            "Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan
+            untukmu pasangan hidup dari jenismu sendiri supaya kamu dapat
+            ketenangan hati dan dijadikannya kasih sayang di antara kamu"
+          </p>
+          <p
+            class="text-white/70 text-sm tracking-wider"
+            data-aos="fade-up"
+            data-aos-delay="700"
+          >
+            QS. Ar-Rum: 21
+          </p>
+
+          <div class="mt-12" data-aos="zoom-in" data-aos-delay="800">
+            <p class="text-3xl md:text-4xl font-serif text-white tracking-wide">
+              05 . 06 . 2026
+            </p>
+          </div>
+
+          <div class="w-24 h-px bg-white mx-auto mt-8" data-aos="fade-up"></div>
+        </div>
+      </section>
+
+      <!-- ============================================ -->
+      <!-- 2. BRIDE & GROOM SECTION -->
+      <!-- ============================================ -->
+      <section id="couple" class="relative py-20 px-4">
+        <div class="absolute inset-0 bg-black/50"></div>
+
+        <div class="max-w-6xl mx-auto relative z-10">
+          <!-- Section Title -->
+          <div class="text-center mb-16" data-aos="fade-up">
+            <div class="w-24 h-px bg-white mx-auto mb-6"></div>
+            <h3
+              class="font-serif text-4xl md:text-5xl text-white mb-4 tracking-wide"
+            >
+              The Bride & Groom
+            </h3>
+            <p class="text-white/60 text-sm tracking-[0.2em] uppercase mb-4">Mempelai Pria & Wanita</p>
+            <div class="w-24 h-px bg-white mx-auto mt-6"></div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-8 md:gap-12">
+            <!-- BRIDE -->
+            <div data-aos="fade-right" class="w-full">
+              <!-- Photo wrapper -->
+              <div
+                class="couple-photo-wrapper h-[500px] md:h-[600px] tilt-card"
+              >
+                <img
+                  src="assets/images/bride.webp"
+                  alt="Bride - Mella Anaya Rahmani"
+                  class="couple-photo tilt-content"
+                  loading="lazy"
+                />
+              </div>
+
+              <!-- Text panel BELOW the photo -->
+              <div
+                class="couple-info-panel"
+                data-aos="fade-up"
+                data-aos-delay="200"
+              >
+                <h4
+                  class="font-script text-5xl md:text-6xl mb-3"
+                  data-aos="zoom-in"
+                  data-aos-delay="400"
+                >
+                  Mella
+                </h4>
+                <div class="w-16 h-px bg-white mx-auto mb-4"></div>
+                <p
+                  class="text-lg mb-2 font-serif"
+                  data-aos="fade-up"
+                  data-aos-delay="500"
+                >
+                  Mella Anaya Rahmani
+                </p>
+                <p
+                  class="text-sm text-white/70 mb-1"
+                  data-aos="fade-up"
+                  data-aos-delay="600"
+                >
+                  Putri Pertama dari
+                </p>
+                <p
+                  class="text-base text-white/90"
+                  data-aos="fade-up"
+                  data-aos-delay="700"
+                >
+                  Bapak Moch. Andi Rahman &amp; Ibu Ika Fatmawati
+                </p>
+                <div class="mt-6" data-aos="zoom-in" data-aos-delay="800">
+                  <a
+                    href="https://instagram.com/mella.anayaa"
+                    target="_blank"
+                    class="inline-flex items-center gap-2 text-white hover:text-gray-300 transition hover:scale-110"
+                  >
+                    <i class="fab fa-instagram text-2xl animate-floating"></i>
+                  </a>
                 </div>
-            `;
-        }
-        
-    } catch (error) {
-        logError('Error loading wishes:', error);
-        wishesContainer.innerHTML = `
-            <div class="text-center text-red-400 py-8">
-                <i class="fas fa-exclamation-triangle text-2xl"></i>
-                <p class="mt-2">${CONFIG.WISHES.errorText}</p>
+              </div>
             </div>
-        `;
-    } finally {
-        // Refresh AOS to detect new elements inside container if any
-        if (typeof AOS !== 'undefined') {
-            AOS.refresh();
-        }
-    }
-}
 
-// ============================================
-// 16. DISPLAY WISHES
-// ============================================
-function displayWishes(wishes) {
-    const wishesContainer = document.getElementById('wishes-container');
-    
-    if (!wishesContainer) return;
-    
-    wishesContainer.innerHTML = '';
-    
-    wishes.forEach((wish, index) => {
-        const wishCard = createWishCard(wish, index);
-        wishesContainer.appendChild(wishCard);
-    });
-    
-    // Refresh AOS to start animations for new cards
-    if (typeof AOS !== 'undefined') {
-        AOS.refresh();
-    }
-    
-    log(`Displayed ${wishes.length} wishes`);
-}
+            <!-- GROOM -->
+            <div data-aos="fade-left" class="w-full">
+              <!-- Photo wrapper -->
+              <div
+                class="couple-photo-wrapper h-[500px] md:h-[600px] tilt-card"
+              >
+                <img
+                  src="assets/images/groom.webp"
+                  alt="Groom - Bram Aji Saka Putra"
+                  class="couple-photo tilt-content"
+                  loading="lazy"
+                />
+              </div>
 
-// ============================================
-// 17. CREATE WISH CARD
-// ============================================
-function createWishCard(wish, index) {
-    const card = document.createElement('div');
-    card.className = 'wish-card bg-white/10 backdrop-blur-sm border border-white/20 p-6';
-    card.setAttribute('data-aos', 'fade-up');
-    card.setAttribute('data-aos-delay', Math.min(index * 50, 500));
-    
-    const timestamp = formatTimestamp(wish.timestamp);
-    
-    card.innerHTML = `
-        <div class="flex items-start gap-4">
-            <div class="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center flex-shrink-0 font-semibold">
-                ${getInitials(wish.nama)}
-            </div>
-            <div class="flex-1">
-                <div class="flex items-start justify-between mb-2">
-                    <h4 class="font-semibold text-white">${escapeHtml(wish.nama)}</h4>
-                    <span class="text-xs text-white/50">${timestamp}</span>
+              <!-- Text panel BELOW the photo -->
+              <div
+                class="couple-info-panel"
+                data-aos="fade-up"
+                data-aos-delay="200"
+              >
+                <h4
+                  class="font-script text-5xl md:text-6xl mb-3"
+                  data-aos="zoom-in"
+                  data-aos-delay="400"
+                >
+                  Bram
+                </h4>
+                <div class="w-16 h-px bg-white mx-auto mb-4"></div>
+                <p
+                  class="text-lg mb-2 font-serif"
+                  data-aos="fade-up"
+                  data-aos-delay="500"
+                >
+                  Bram Aji Saka Putra
+                </p>
+                <p
+                  class="text-sm text-white/70 mb-1"
+                  data-aos="fade-up"
+                  data-aos-delay="600"
+                >
+                  Putra Kedua dari
+                </p>
+                <p
+                  class="text-base text-white/90"
+                  data-aos="fade-up"
+                  data-aos-delay="700"
+                >
+                  Bapak Hadi Kuswanto &amp; Almh. Ibu Watini
+                </p>
+                <div class="mt-6" data-aos="zoom-in" data-aos-delay="800">
+                  <a
+                    href="https://instagram.com/brama.ji__"
+                    target="_blank"
+                    class="inline-flex items-center gap-2 text-white hover:text-gray-300 transition hover:scale-110"
+                  >
+                    <i class="fab fa-instagram text-2xl animate-floating"></i>
+                  </a>
                 </div>
-                <p class="text-white/90 leading-relaxed">${escapeHtml(wish.ucapan)}</p>
+              </div>
             </div>
+          </div>
         </div>
-    `;
-    
-    return card;
-}
+      </section>
 
-// ============================================
-// 18. CLEANUP ON PAGE UNLOAD
-// ============================================
-window.addEventListener('beforeunload', function() {
-    // Stop countdown
-    if (countdownInterval) {
-        clearInterval(countdownInterval);
-    }
-    
-    // Pause music
-    if (musicPlayer) {
-        musicPlayer.pause();
-    }
-    
-    log('Cleanup completed');
-});
+      <!-- ============================================ -->
+      <!-- 3. JOURNEY OF LOVE -->
+      <!-- ============================================ -->
+      <section id="journey" class="relative py-20 px-4">
+        <div class="absolute inset-0 bg-black/60"></div>
 
-// ============================================
-// 19. HANDLE VISIBILITY CHANGE (pause music when tab inactive)
-// ============================================
-document.addEventListener('visibilitychange', function() {
-    if (!isFeatureEnabled('showMusicPlayer')) return;
-    
-    if (document.hidden) {
-        // Tab is hidden
-        if (musicPlayer && !musicPlayer.paused) {
-            musicPlayer.pause();
-            log('Music paused (tab hidden)');
-        }
-    } else {
-        // Tab is visible
-        const audioState = localStorage.getItem('wedding_music_state');
-        // Only resume if invitation is opened, we have autoplay enabled, AND user hasn't muted it
-        if (isInvitationOpened && musicPlayer && musicPlayer.paused && CONFIG.SETTINGS.autoPlayMusic && audioState !== 'muted') {
-            musicPlayer.play().catch(error => {
-                logError('Error resuming music:', error);
-            });
-            log('Music resumed (tab visible)');
-        }
-    }
-});
+        <div class="max-w-4xl mx-auto relative z-10">
+          <!-- Section Title -->
+          <div class="text-center mb-16" data-aos="fade-up">
+            <div class="w-24 h-px bg-white mx-auto mb-6"></div>
+            <h3
+              class="font-serif text-4xl md:text-5xl text-white mb-4 tracking-wide text-reveal-kinetic"
+            >
+              <span>Our Journey of Love</span>
+            </h3>
+            <p class="text-white/60 text-sm tracking-[0.2em] uppercase mb-4">Our Love Story</p>
+            <div class="w-24 h-px bg-white mx-auto mt-6"></div>
+            <!-- Parallax Decoration -->
+            <div class="absolute -z-10 top-20 right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl parallax-el" data-parallax-speed="0.15"></div>
+            <div class="absolute -z-10 bottom-20 left-10 w-60 h-60 bg-white/5 rounded-full blur-3xl parallax-el" data-parallax-speed="-0.1"></div>
 
-// ============================================
-// 20. KEYBOARD SHORTCUTS (untuk development)
-// ============================================
-document.addEventListener('keydown', function(event) {
-    // Ctrl+Shift+D = Toggle debug mode
-    if (event.ctrlKey && event.shiftKey && event.key === 'D') {
-        const debugInfo = {
-            currentGuest: currentGuest,
-            weddingDate: weddingDate,
-            isOnline: navigator.onLine,
-            musicPlaying: musicPlayer ? !musicPlayer.paused : false,
-            featuresEnabled: CONFIG.FEATURES,
-            browserInfo: getBrowserInfo()
-        };
-        console.log('%c=== DEBUG INFO ===', 'color: #3b82f6; font-size: 16px; font-weight: bold');
-        console.table(debugInfo);
-        console.log('%c==================', 'color: #3b82f6; font-size: 16px; font-weight: bold');
-    }
-    
-    // Ctrl+Shift+M = Toggle music
-    if (event.ctrlKey && event.shiftKey && event.key === 'M') {
-        toggleMusic();
-    }
-    
-    // Ctrl+Shift+R = Reload wishes
-    if (event.ctrlKey && event.shiftKey && event.key === 'R') {
-        if (isFeatureEnabled('showWishes')) {
-            loadWishes();
-            showNotification('Wishes reloaded', 'info');
-        }
-    }
-});
+          </div>
 
-// ============================================
-// 21. HANDLE NETWORK STATUS CHANGES
-// ============================================
-window.addEventListener('online', function() {
-    log('Connection restored');
-    showNotification('Connection restored', 'success');
-});
+          <!-- Timeline -->
+          <div class="space-y-12">
+            <!-- Story 1 -->
+            <div
+              class="flex flex-col md:flex-row gap-6 items-center"
+              data-aos="fade-right"
+            >
+              <div class="w-full md:w-1/3">
+                <div
+                  class="aspect-square bg-cover bg-center border-4 border-white/20"
+                  style="
+                    background-image: url(&quot;assets/images/firstmeet.webp&quot;);
+                  "
+                ></div>
+              </div>
+              <div class="w-full md:w-2/3 text-white">
+                <div
+                  class="w-16 h-px bg-white mb-4"
+                  data-aos="fade-right"
+                  data-aos-delay="200"
+                ></div>
+                <h4
+                  class="font-serif text-2xl md:text-3xl mb-3"
+                  data-aos="fade-up"
+                  data-aos-delay="300"
+                >
+                  First Meet
+                </h4>
+                <p
+                  class="text-sm text-white/70 mb-4 tracking-wider"
+                  data-aos="fade-up"
+                  data-aos-delay="400"
+                >
+                  July 2025
+                </p>
+                <p
+                  class="text-white/90 leading-relaxed"
+                  data-aos="fade-up"
+                  data-aos-delay="500"
+                >
+                  Pertemuan pertama kami di Penatarsewu terjadi seperti bisikan
+                  takdir yang lembut di tengah riuh kegiatan KKN. Tanpa pernah
+                  terbayangkan, dari hal sederhana tersebut, tumbuh percakapan
+                  panjang yang pada akhirnya menjadi saksi awal dari cerita
+                  cinta yang indah.
+                </p>
+              </div>
+            </div>
 
-window.addEventListener('offline', function() {
-    log('Connection lost');
-    showNotification(CONFIG.MESSAGES.info.offline, 'error');
-});
+            <!-- Story 2 -->
+            <div
+              class="flex flex-col md:flex-row-reverse gap-6 items-center"
+              data-aos="fade-left"
+            >
+              <div class="w-full md:w-1/3">
+                <div
+                  class="aspect-square bg-cover bg-center border-4 border-white/20"
+                  style="
+                    background-image: url(&quot;assets/images/proposal.webp&quot;);
+                  "
+                ></div>
+              </div>
+              <div class="w-full md:w-2/3 text-white md:text-right">
+                <div
+                  class="w-16 h-px bg-white mb-4 md:ml-auto"
+                  data-aos="fade-left"
+                  data-aos-delay="200"
+                ></div>
+                <h4
+                  class="font-serif text-2xl md:text-3xl mb-3"
+                  data-aos="fade-up"
+                  data-aos-delay="300"
+                >
+                  The Proposal
+                </h4>
+                <p
+                  class="text-sm text-white/70 mb-4 tracking-wider"
+                  data-aos="fade-up"
+                  data-aos-delay="400"
+                >
+                  December 2025
+                </p>
+                <p
+                  class="text-white/90 leading-relaxed"
+                  data-aos="fade-up"
+                  data-aos-delay="500"
+                >
+                  Di hari tunangan kami, suasana sederhana berubah menjadi
+                  begitu sakral, bukan sekadar cincin yang melingkar di jari,
+                  melainkan janji yang terucap dalam diam, bahwa perjalanan yang
+                  dimulai dari pertemuan pertama kini berlanjut menuju ikatan
+                  yang lebih dalam, dengan doa dan harapan agar cinta ini tumbuh
+                  menyatukan langkah kami.
+                </p>
+              </div>
+            </div>
 
-// ============================================
-// 22. DETECT BROWSER COMPATIBILITY
-// ============================================
-function checkBrowserCompatibility() {
-    const browserInfo = getBrowserInfo();
-    log('Browser detected:', browserInfo);
-    
-    // Check critical features
-    const features = {
-        fetch: typeof fetch !== 'undefined',
-        Promise: typeof Promise !== 'undefined',
-        localStorage: typeof localStorage !== 'undefined',
-        IntersectionObserver: 'IntersectionObserver' in window
-    };
-    
-    const unsupported = Object.keys(features).filter(key => !features[key]);
-    
-    if (unsupported.length > 0) {
-        logWarning('Unsupported features:', unsupported);
-        showNotification('Your browser may not support all features. Please update to the latest version.', 'info');
-    }
-    
-    return unsupported.length === 0;
-}
+            <!-- Story 3 - Add more if needed -->
+            <div
+              class="flex flex-col md:flex-row gap-6 items-center"
+              data-aos="fade-right"
+            >
+              <div class="w-full md:w-1/3">
+                <div
+                  class="aspect-square bg-cover bg-center border-4 border-white/20"
+                  style="
+                    background-image: url(&quot;assets/images/dream.webp&quot;);
+                  "
+                ></div>
+              </div>
+              <div class="w-full md:w-2/3 text-white">
+                <div class="w-16 h-px bg-white mb-4"></div>
+                <h4 class="font-serif text-2xl md:text-3xl mb-3">
+                  Building Dreams Together
+                </h4>
+                <p class="text-sm text-white/70 mb-4 tracking-wider">
+                  June 2026
+                </p>
+                <p class="text-white/90 leading-relaxed">
+                  Kami terus membangun mimpi bersama, melewati setiap tantangan
+                  dengan cinta dan pengertian. Kini saatnya kami melangkah ke
+                  babak baru kehidupan sebagai suami istri.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-// ============================================
-// 23. PERFORMANCE MONITORING (Optional)
-// ============================================
-window.addEventListener('load', function() {
-    if (window.performance && window.performance.timing) {
-        const perfData = window.performance.timing;
-        const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
-        const domReadyTime = perfData.domContentLoadedEventEnd - perfData.navigationStart;
-        
-        log('Performance Metrics:');
-        log('- Page Load Time:', pageLoadTime + 'ms');
-        log('- DOM Ready Time:', domReadyTime + 'ms');
-        
-        // Log slow loading
-        if (pageLoadTime > 5000) {
-            logWarning('Page loaded slowly (>5s). Consider optimizing images.');
-        }
-    }
-});
+      <!-- ============================================ -->
+      <!-- 4. COUNTDOWN TIMER -->
+      <!-- ============================================ -->
+      <section id="countdown" class="relative py-20 px-4">
+        <div class="absolute inset-0 bg-black/50"></div>
 
-// ============================================
-// 24. ERROR BOUNDARY
-// ============================================
-window.addEventListener('error', function(event) {
-    logError('Global error caught:', event.error);
-    
-    // Don't show error notification for resource loading errors
-    if (event.message.includes('Failed to load') || event.message.includes('Script error')) {
-        return;
-    }
-    
-    // Show generic error message
-    showNotification('An unexpected error occurred. Please refresh the page.', 'error');
-});
+        <div
+          class="max-w-4xl mx-auto text-center relative z-10"
+          data-aos="fade-up"
+        >
+          <div class="w-24 h-px bg-white mx-auto mb-6"></div>
+          <h3
+            class="font-serif text-3xl md:text-4xl text-white mb-4 tracking-wide"
+          >
+            Counting The Days
+          </h3>
+          <p class="text-white/60 text-sm tracking-[0.2em] uppercase mb-4">Save The Date</p>
+          <div class="w-24 h-px bg-white mx-auto mb-12"></div>
 
-// Handle unhandled promise rejections
-window.addEventListener('unhandledrejection', function(event) {
-    logError('Unhandled promise rejection:', event.reason);
-});
+          <!-- Parallax Background Element -->
+          <div class="absolute -z-10 top-0 left-10 w-32 h-32 bg-white/5 rounded-full blur-2xl parallax-el" data-parallax-speed="-0.1"></div>
+          <div class="absolute -z-10 bottom-0 right-10 w-48 h-48 bg-white/5 rounded-full blur-3xl parallax-el" data-parallax-speed="0.2"></div>
 
-// ============================================
-// 25. SERVICE WORKER REGISTRATION (Optional - for PWA)
-// ============================================
-if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
-    // Uncomment to enable service worker (for offline support)
-    /*
-    window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js').then(function(registration) {
-            log('ServiceWorker registered:', registration.scope);
-        }).catch(function(error) {
-            logError('ServiceWorker registration failed:', error);
-        });
-    });
-    */
-}
+          <div class="grid grid-cols-4 gap-4 md:gap-8">
+            <div
+              class="bg-white/10 backdrop-blur-sm p-2 md:p-8 border border-white/20"
+              data-aos="fade-up"
+              data-aos-delay="0"
+            >
+              <p
+                class="font-serif text-4xl md:text-6xl text-white font-bold mb-2"
+                id="days"
+              >
+                0
+              </p>
+              <p class="text-white/80 text-xs md:text-base tracking-wider">
+                Days
+              </p>
+            </div>
+            <div
+              class="bg-white/10 backdrop-blur-sm p-2 md:p-8 border border-white/20"
+              data-aos="fade-up"
+              data-aos-delay="100"
+            >
+              <p
+                class="font-serif text-4xl md:text-6xl text-white font-bold mb-2"
+                id="hours"
+              >
+                0
+              </p>
+              <p class="text-white/80 text-xs md:text-base tracking-wider">
+                Hours
+              </p>
+            </div>
+            <div
+              class="bg-white/10 backdrop-blur-sm p-2 md:p-8 border border-white/20"
+              data-aos="fade-up"
+              data-aos-delay="200"
+            >
+              <p
+                class="font-serif text-4xl md:text-6xl text-white font-bold mb-2"
+                id="minutes"
+              >
+                0
+              </p>
+              <p class="text-white/80 text-xs md:text-base tracking-wider">
+                Minutes
+              </p>
+            </div>
+            <div
+              class="bg-white/10 backdrop-blur-sm p-2 md:p-8 border border-white/20"
+              data-aos="fade-up"
+              data-aos-delay="300"
+            >
+              <p
+                class="font-serif text-4xl md:text-6xl text-white font-bold mb-2"
+                id="seconds"
+              >
+                0
+              </p>
+              <p class="text-white/80 text-xs md:text-base tracking-wider">
+                Seconds
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-// ============================================
-// EXPOSE FUNCTIONS TO GLOBAL SCOPE
-// (untuk bisa dipanggil dari HTML)
-// ============================================
-window.openInvitation = openInvitation;
-window.copyToClipboard = copyToClipboard;
-window.toggleMusic = toggleMusic;
+      <!-- ============================================ -->
+      <!-- 5. EVENT DETAILS -->
+      <!-- ============================================ -->
+      <section id="event" class="relative py-20 px-4">
+        <div class="absolute inset-0 bg-black/60"></div>
 
-// Expose untuk debugging (development only)
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    window.__wedding__ = {
-        currentGuest,
-        weddingDate,
-        config: CONFIG,
-        reloadWishes: loadWishes,
-        checkCompatibility: checkBrowserCompatibility
-    };
-}
+        <div class="max-w-5xl mx-auto relative z-10">
+          <!-- Section Title -->
+          <div class="text-center mb-16" data-aos="fade-up">
+            <div class="w-24 h-px bg-white mx-auto mb-6"></div>
+            <h3
+              class="font-serif text-4xl md:text-5xl text-white mb-4 tracking-wide text-reveal-kinetic"
+            >
+              <span>Event Details</span>
+            </h3>
+            <p class="text-white/60 text-sm tracking-[0.2em] uppercase mb-4">Wedding Day Timeline</p>
+            <div class="w-24 h-px bg-white mx-auto mt-6"></div>
+            <!-- Parallax Decoration -->
+            <div class="absolute -z-10 top-0 left-0 w-64 h-64 bg-white/5 rounded-full blur-3xl parallax-el" data-parallax-speed="0.08"></div>
+          </div>
 
-// ============================================
-// 26. LIGHTBOX GALLERY
-// ============================================
-let galleryImages = [];
-let currentImageIndex = 0;
+          <div class="grid md:grid-cols-2 gap-8 md:gap-12">
+            <!-- AKAD -->
+            <div
+              class="bg-white/10 backdrop-blur-sm border border-white/20 p-8 md:p-10 text-center card-hover tilt-card"
+              data-aos="fade-up"
+            >
+              <div class="mb-6 tilt-content">
+                <i class="fas fa-ring text-white text-5xl animate-floating"></i>
+              </div>
+              <div class="w-16 h-px bg-white mx-auto mb-6 tilt-content"></div>
+              <h4
+                class="font-serif text-3xl text-white mb-6 tracking-wide tilt-content"
+                data-aos="zoom-in"
+                data-aos-delay="200"
+              >
+                Akad Nikah
+              </h4>
 
-/**
- * Initialize Lightbox for gallery
- */
-function initLightbox() {
-    log('Initializing Lightbox...');
-    
-    const lightbox = document.getElementById('lightbox');
-    const lightboxImg = document.getElementById('lightbox-img');
-    const closeBtn = document.querySelector('.lightbox-close');
-    const prevBtn = document.querySelector('.lightbox-prev');
-    const nextBtn = document.querySelector('.lightbox-next');
-    
-    if (!lightbox || !lightboxImg) {
-        logWarning('Lightbox elements not found');
-        return;
-    }
-    
-    // Get all gallery images
-    const galleryItems = document.querySelectorAll('.gallery-image img');
-    galleryImages = Array.from(galleryItems).map(img => ({
-        src: img.src,
-        alt: img.getAttribute('alt') || 'Wedding Gallery'
-    }));
-    
-    log(`Lightbox: Found ${galleryImages.length} images`);
-    
-    // Add click event to each gallery item
-    galleryItems.forEach((img, index) => {
-        img.addEventListener('click', (e) => {
-            e.preventDefault();
-            openLightbox(index);
-        });
-    });
-    
-    // Close events
-    if (closeBtn) {
-        closeBtn.onclick = () => { 
-            lightbox.style.display = 'none'; 
-            document.body.style.overflow = 'auto'; // Re-enable scroll
-        };
-    }
-    
-    lightbox.onclick = (e) => {
-        if (e.target === lightbox || e.target.classList.contains('lightbox-content')) {
-            lightbox.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    };
-    
-    // Navigation events
-    if (prevBtn) {
-        prevBtn.onclick = (e) => {
-            e.stopPropagation();
-            changeImage(-1);
-        };
-    }
-    
-    if (nextBtn) {
-        nextBtn.onclick = (e) => {
-            e.stopPropagation();
-            changeImage(1);
-        };
-    }
-    
-    // Keyboard navigation
-    document.addEventListener('keydown', (e) => {
-        if (lightbox.style.display === 'block') {
-            if (e.key === 'ArrowLeft') changeImage(-1);
-            if (e.key === 'ArrowRight') changeImage(1);
-            if (e.key === 'Escape') {
-                lightbox.style.display = 'none';
-                document.body.style.overflow = 'auto';
-            }
-        }
-    });
+              <div
+                class="space-y-3 text-white/90 mb-8"
+                data-aos="fade-up"
+                data-aos-delay="400"
+              >
+                <p class="flex items-center justify-center gap-3">
+                  <i class="far fa-calendar w-5"></i>
+                  <span>Jumat, 05 Juni 2026</span>
+                </p>
+                <p class="flex items-center justify-center gap-3">
+                  <i class="far fa-clock w-5"></i>
+                  <span>08.00 - 10.00 WIB</span>
+                </p>
+                <div class="pt-4">
+                  <p
+                    class="flex items-start justify-center gap-3 text-white/80"
+                  >
+                    <i class="fas fa-map-marker-alt w-5 mt-1"></i>
+                    <span class="text-left">
+                      Kediaman Mempelai Wanita<br />
+                      <span class="text-sm"
+                        >Dusun Mlaten Gg. II RT 01 RW 02 Karangrejo, Gempol,
+                        Pasuruan, Jawa Timur 67155</span
+                      >
+                    </span>
+                  </p>
+                </div>
+              </div>
 
-    // Touch events for mobile swipe
-    let touchStartX = 0;
-    let touchEndX = 0;
-    
-    lightbox.addEventListener('touchstart', (e) => {
-        touchStartX = e.changedTouches[0].screenX;
-    }, {passive: true});
-    
-    lightbox.addEventListener('touchend', (e) => {
-        touchEndX = e.changedTouches[0].screenX;
-        handleSwipe();
-    }, {passive: true});
-    
-    function handleSwipe() {
-        if (touchEndX < touchStartX - 50) {
-            changeImage(1); // Swipe left -> Next
-        }
-        if (touchEndX > touchStartX + 50) {
-            changeImage(-1); // Swipe right -> Prev
-        }
-    }
-}
+              <div class="w-16 h-px bg-white mx-auto mb-6"></div>
 
-/**
- * Open Lightbox with specific image index
- */
-function openLightbox(index) {
-    const lightbox = document.getElementById('lightbox');
-    const lightboxImg = document.getElementById('lightbox-img');
-    
-    if (index < 0 || index >= galleryImages.length) return;
-    
-    currentImageIndex = index;
-    lightboxImg.src = galleryImages[currentImageIndex].src;
-    
-    lightbox.style.display = 'block';
-    document.body.style.overflow = 'hidden'; // Disable scroll
-    
-    updateLightboxButtons();
-    log('Lightbox opened for image:', currentImageIndex);
-}
+              <a
+                href="https://maps.app.goo.gl/JaqMAxvPNsGcAP7q7"
+                target="_blank"
+                class="inline-block bg-white text-black px-8 py-3 text-sm tracking-widest uppercase hover:bg-gray-200 transition btn-shimmer"
+                data-aos="zoom-in"
+                data-aos-delay="600"
+              >
+                <i class="fas fa-map-marked-alt mr-2"></i>View Location
+              </a>
+            </div>
 
-/**
- * Change Lightbox image (prev/next)
- */
-function changeImage(step) {
-    const lightboxImg = document.getElementById('lightbox-img');
-    const newIndex = currentImageIndex + step;
-    
-    // Check boundaries (prevent looping)
-    if (newIndex < 0 || newIndex >= galleryImages.length) {
-        return;
-    }
-    
-    currentImageIndex = newIndex;
-    
-    // Smooth transition
-    lightboxImg.style.opacity = '0';
-    setTimeout(() => {
-        lightboxImg.src = galleryImages[currentImageIndex].src;
-        lightboxImg.style.opacity = '1';
-        updateLightboxButtons();
-    }, 200);
-}
+            <!-- RESEPSI -->
+            <div
+              class="bg-white/10 backdrop-blur-sm border border-white/20 p-8 md:p-10 text-center card-hover tilt-card"
+              data-aos="fade-up"
+              data-aos-delay="100"
+            >
+              <div class="mb-6 tilt-content">
+                <i
+                  class="fas fa-glass-cheers text-white text-5xl animate-floating"
+                ></i>
+              </div>
+              <div class="w-16 h-px bg-white mx-auto mb-6 tilt-content"></div>
+              <h4
+                class="font-serif text-3xl text-white mb-6 tracking-wide tilt-content"
+                data-aos="zoom-in"
+                data-aos-delay="300"
+              >
+                Resepsi
+              </h4>
 
-/**
- * Update visibility of prev/next buttons based on current image index
- */
-function updateLightboxButtons() {
-    const prevBtn = document.querySelector('.lightbox-prev');
-    const nextBtn = document.querySelector('.lightbox-next');
-    
-    if (prevBtn) {
-        prevBtn.style.display = (currentImageIndex === 0) ? 'none' : 'block';
-    }
-    
-    if (nextBtn) {
-        nextBtn.style.display = (currentImageIndex === galleryImages.length - 1) ? 'none' : 'block';
-    }
-}
+              <div
+                class="space-y-3 text-white/90 mb-8"
+                data-aos="fade-up"
+                data-aos-delay="500"
+              >
+                <p class="flex items-center justify-center gap-3">
+                  <i class="far fa-calendar w-5"></i>
+                  <span>Jumat, 05 Juni 2026</span>
+                </p>
+                <p class="flex items-center justify-center gap-3">
+                  <i class="far fa-clock w-5"></i>
+                  <span>14.00 - 21.00 WIB</span>
+                </p>
+                <div class="pt-4">
+                  <p
+                    class="flex items-start justify-center gap-3 text-white/80"
+                  >
+                    <i class="fas fa-map-marker-alt w-5 mt-1"></i>
+                    <span class="text-left">
+                      Kediaman Mempelai Wanita<br />
+                      <span class="text-sm"
+                        >Dusun Mlaten Gg. II RT 01 RW 02 Karangrejo, Gempol,
+                        Pasuruan, Jawa Timur 67155</span
+                      >
+                    </span>
+                  </p>
+                </div>
+              </div>
 
-// ============================================
-// LOG INIT COMPLETE
-// ============================================
-log('%cmain.js loaded successfully ✓', 'color: #10b981; font-weight: bold');
+              <div class="w-16 h-px bg-white mx-auto mb-6"></div>
 
-// Run browser compatibility check
-checkBrowserCompatibility();
+              <a
+                href="https://maps.app.goo.gl/JaqMAxvPNsGcAP7q7"
+                target="_blank"
+                class="inline-block bg-white text-black px-8 py-3 text-sm tracking-widest uppercase hover:bg-gray-200 transition btn-shimmer"
+                data-aos="zoom-in"
+                data-aos-delay="700"
+              >
+                <i class="fas fa-map-marked-alt mr-2"></i>View Location
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
 
-// ============================================
-// 23. ADVANCED ANIMATIONS: PARTICLES, TILT, CONFETTI
-// ============================================
+      <!-- ============================================ -->
+      <!-- 6. GALLERY -->
+      <!-- ============================================ -->
+      <section id="gallery" class="relative py-20 px-4">
+        <div class="absolute inset-0 bg-black/50"></div>
 
-function initAdvancedAnimations() {
-    initParticles();
-    initTilt();
-    initParallax();
-}
+        <div class="max-w-6xl mx-auto relative z-10">
+          <!-- Opening Quote -->
+          <div class="text-center mb-12" data-aos="fade-up">
+            <div class="w-24 h-px bg-white mx-auto mb-6"></div>
+            <h3
+              class="font-serif text-4xl md:text-5xl text-white mb-6 tracking-wide text-reveal-kinetic"
+            >
+              <span>Gallery</span>
+            </h3>
+            <p class="text-white/60 text-sm tracking-[0.2em] uppercase mb-4">Captured Moments</p>
+            <!-- Parallax Decoration -->
+            <div class="absolute -z-10 -bottom-20 left-10 w-48 h-48 bg-white/10 rounded-full blur-3xl parallax-el" data-parallax-speed="0.12"></div>
+            <p
+              class="text-white/80 text-lg md:text-xl italic max-w-2xl mx-auto leading-relaxed"
+            >
+              "Every love story is beautiful, but ours is my favorite"
+            </p>
+            <div class="w-24 h-px bg-white mx-auto mt-6"></div>
+          </div>
 
-function initParticles() {
-    const canvas = document.getElementById('particles-canvas');
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    let particles = [];
-    const particleCount = 30;
-    
-    function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-    
-    window.addEventListener('resize', resize);
-    resize();
-    
-    class Particle {
-        constructor() {
-            this.reset();
-        }
-        
-        reset() {
-            this.x = Math.random() * canvas.width;
-            this.y = canvas.height + Math.random() * 100;
-            this.size = Math.random() * 15 + 5;
-            this.speed = Math.random() * 1 + 0.5;
-            this.opacity = Math.random() * 0.5 + 0.1;
-            this.type = Math.random() > 0.5 ? 'heart' : 'circle';
-        }
-        
-        update() {
-            this.y -= this.speed;
-            if (this.y < -20) {
-                this.reset();
-            }
-        }
-        
-        draw() {
-            ctx.globalAlpha = this.opacity;
-            ctx.fillStyle = '#ffffff';
-            
-            if (this.type === 'heart') {
-                this.drawHeart(this.x, this.y, this.size);
-            } else {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size / 4, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-        
-        drawHeart(x, y, size) {
-            ctx.beginPath();
-            ctx.moveTo(x, y + size / 4);
-            ctx.quadraticCurveTo(x, y, x + size / 4, y);
-            ctx.quadraticCurveTo(x + size / 2, y, x + size / 2, y + size / 4);
-            ctx.quadraticCurveTo(x + size / 2, y + size / 2, x, y + size * 0.75);
-            ctx.quadraticCurveTo(x - size / 2, y + size / 2, x - size / 2, y + size / 4);
-            ctx.quadraticCurveTo(x - size / 2, y, x - size / 4, y);
-            ctx.quadraticCurveTo(x, y, x, y + size / 4);
-            ctx.fill();
-        }
-    }
-    
-    for (let i = 0; i < particleCount; i++) {
-        particles.push(new Particle());
-    }
-    
-    function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        particles.forEach(p => {
-            p.update();
-            p.draw();
-        });
-        requestAnimationFrame(animate);
-    }
-    
-    animate();
-}
+          <!-- Gallery Grid -->
+          <div
+            class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-12"
+            id="gallery-grid"
+          >
+            <div
+              class="aspect-square overflow-hidden gallery-image"
+              data-aos="zoom-in"
+            >
+              <img
+                src="assets/images/gallery/1.webp"
+                alt="Gallery 1"
+                class="w-full h-full object-cover hover:scale-110 transition duration-500 cursor-pointer"
+              />
+            </div>
+            <div
+              class="aspect-square overflow-hidden gallery-image"
+              data-aos="zoom-in"
+              data-aos-delay="100"
+            >
+              <img
+                src="assets/images/gallery/2.webp"
+                alt="Gallery 2"
+                class="w-full h-full object-cover hover:scale-110 transition duration-500 cursor-pointer"
+              />
+            </div>
+            <div
+              class="aspect-square overflow-hidden gallery-image"
+              data-aos="zoom-in"
+              data-aos-delay="200"
+            >
+              <img
+                src="assets/images/gallery/3.webp"
+                alt="Gallery 3"
+                class="w-full h-full object-cover hover:scale-110 transition duration-500 cursor-pointer"
+              />
+            </div>
+            <div
+              class="aspect-square overflow-hidden gallery-image"
+              data-aos="zoom-in"
+              data-aos-delay="300"
+            >
+              <img
+                src="assets/images/gallery/4.webp"
+                alt="Gallery 4"
+                class="w-full h-full object-cover hover:scale-110 transition duration-500 cursor-pointer"
+              />
+            </div>
+            <div
+              class="aspect-square overflow-hidden gallery-image"
+              data-aos="zoom-in"
+              data-aos-delay="400"
+            >
+              <img
+                src="assets/images/gallery/5.webp"
+                alt="Gallery 5"
+                class="w-full h-full object-cover hover:scale-110 transition duration-500 cursor-pointer"
+              />
+            </div>
+            <div
+              class="aspect-square overflow-hidden gallery-image"
+              data-aos="zoom-in"
+              data-aos-delay="500"
+            >
+              <img
+                src="assets/images/gallery/6.webp"
+                alt="Gallery 6"
+                class="w-full h-full object-cover hover:scale-110 transition duration-500 cursor-pointer"
+              />
+            </div>
+            <div
+              class="aspect-square overflow-hidden gallery-image"
+              data-aos="zoom-in"
+              data-aos-delay="500"
+            >
+              <img
+                src="assets/images/gallery/7.webp"
+                alt="Gallery 7"
+                class="w-full h-full object-cover hover:scale-110 transition duration-500 cursor-pointer"
+              />
+            </div>
+            <div
+              class="aspect-square overflow-hidden gallery-image"
+              data-aos="zoom-in"
+              data-aos-delay="500"
+            >
+              <img
+                src="assets/images/gallery/8.webp"
+                alt="Gallery 8"
+                class="w-full h-full object-cover hover:scale-110 transition duration-500 cursor-pointer"
+              />
+            </div>
+            <div
+              class="aspect-square overflow-hidden gallery-image"
+              data-aos="zoom-in"
+              data-aos-delay="500"
+            >
+              <img
+                src="assets/images/gallery/9.webp"
+                alt="Gallery 9"
+                class="w-full h-full object-cover hover:scale-110 transition duration-500 cursor-pointer"
+              />
+            </div>
+            <div
+              class="aspect-square overflow-hidden gallery-image"
+              data-aos="zoom-in"
+              data-aos-delay="500"
+            >
+              <img
+                src="assets/images/gallery/10.webp"
+                alt="Gallery 10"
+                class="w-full h-full object-cover hover:scale-110 transition duration-500 cursor-pointer"
+              />
+            </div>
+            <div
+              class="aspect-square overflow-hidden gallery-image"
+              data-aos="zoom-in"
+              data-aos-delay="500"
+            >
+              <img
+                src="assets/images/gallery/11.webp"
+                alt="Gallery 11"
+                class="w-full h-full object-cover hover:scale-110 transition duration-500 cursor-pointer"
+              />
+            </div>
+            <div
+              class="aspect-square overflow-hidden gallery-image"
+              data-aos="zoom-in"
+              data-aos-delay="500"
+            >
+              <img
+                src="assets/images/gallery/12.webp"
+                alt="Gallery 12"
+                class="w-full h-full object-cover hover:scale-110 transition duration-500 cursor-pointer"
+              />
+            </div>
+            <div
+              class="aspect-square overflow-hidden gallery-image"
+              data-aos="zoom-in"
+              data-aos-delay="500"
+            >
+              <img
+                src="assets/images/gallery/13.webp"
+                alt="Gallery 12"
+                class="w-full h-full object-cover hover:scale-110 transition duration-500 cursor-pointer"
+              />
+            </div>
+            <div
+              class="aspect-square overflow-hidden gallery-image"
+              data-aos="zoom-in"
+              data-aos-delay="500"
+            >
+              <img
+                src="assets/images/gallery/14.webp"
+                alt="Gallery 12"
+                class="w-full h-full object-cover hover:scale-110 transition duration-500 cursor-pointer"
+              />
+            </div>
+            <div
+              class="aspect-square overflow-hidden gallery-image"
+              data-aos="zoom-in"
+              data-aos-delay="500"
+            >
+              <img
+                src="assets/images/gallery/15.webp"
+                alt="Gallery 12"
+                class="w-full h-full object-cover hover:scale-110 transition duration-500 cursor-pointer"
+              />
+            </div>
+          </div>
 
-function initParallax() {
-    window.addEventListener('scroll', () => {
-        const scrolled = window.pageYOffset;
-        const parallaxEls = document.querySelectorAll('.parallax-el');
-        
-        parallaxEls.forEach(el => {
-            const speed = el.getAttribute('data-parallax-speed') || 0.5;
-            const yPos = -(scrolled * speed);
-            el.style.transform = `translateY(${yPos}px)`;
-        });
-    });
-}
+          <!-- Closing Quote -->
+          <div class="text-center" data-aos="fade-up">
+            <div class="w-24 h-px bg-white mx-auto mb-6"></div>
+            <p
+              class="text-white/80 text-lg md:text-xl italic max-w-2xl mx-auto leading-relaxed"
+            >
+              "Moments captured, memories cherished forever"
+            </p>
+            <div class="w-24 h-px bg-white mx-auto mt-6"></div>
+          </div>
+        </div>
+      </section>
 
-function initTilt() {
-    const cards = document.querySelectorAll('.tilt-card');
-    
-    cards.forEach(card => {
-        card.addEventListener('mousemove', e => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            
-            const rotateX = ((y - centerY) / centerY) * -15; // Increased from 10
-            const rotateY = ((x - centerX) / centerX) * 15;  // Increased from 10
-            
-            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-        });
-        
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg)`;
-        });
-    });
-}
+      <!-- ============================================ -->
+      <!-- 7. RSVP SECTION -->
+      <!-- ============================================ -->
+      <section id="rsvp" class="relative py-20 px-4">
+        <div class="absolute inset-0 bg-black/60"></div>
 
-function triggerConfetti() {
-    if (typeof confetti === 'function') {
-        const duration = 3 * 1000;
-        const animationEnd = Date.now() + duration;
-        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+        <div class="max-w-2xl mx-auto relative z-10">
+          <!-- Section Title -->
+          <div class="text-center mb-12" data-aos="fade-up">
+            <div class="w-24 h-px bg-white mx-auto mb-6"></div>
+            <h3
+              class="font-serif text-4xl md:text-5xl text-white mb-4 tracking-wide text-reveal-kinetic"
+            >
+              <span>RSVP</span>
+            </h3>
+            <p class="text-white/60 text-sm tracking-[0.2em] uppercase mb-6">Be Our Guest</p>
+            <p class="text-white/80 text-base md:text-lg">
+              Kindly confirm your attendance
+            </p>
+            <div class="w-24 h-px bg-white mx-auto mt-6"></div>
 
-        function randomInRange(min, max) {
-            return Math.random() * (max - min) + min;
-        }
+            <!-- Guest Name Display -->
+            <div
+              class="mt-8 bg-white/10 backdrop-blur-sm border border-white/20 p-6 inline-block"
+            >
+              <p class="text-white/70 text-sm tracking-wider mb-2">Dear</p>
+              <p class="font-serif text-3xl text-white" id="rsvp-guest-name">
+                Tamu Undangan
+              </p>
+            </div>
+          </div>
 
-        const interval = setInterval(function() {
-            const timeLeft = animationEnd - Date.now();
+          <!-- RSVP FORM -->
+          <div
+            class="bg-white/10 backdrop-blur-md border border-white/20 p-8 md:p-12 shadow-2xl tilt-card"
+            data-aos="zoom-in"
+          >
+            <div class="tilt-content">
+            <form id="rsvp-form" class="space-y-6">
+              <div data-aos="fade-up" data-aos-delay="100">
+                <label class="block text-white mb-4 font-medium tracking-wide"
+                  >Will you attend? *</label
+                >
+                <div class="grid grid-cols-2 gap-4">
+                  <label
+                    class="flex items-center justify-center p-4 border-2 border-white/30 cursor-pointer hover:border-white transition bg-white/5"
+                  >
+                    <input
+                      type="radio"
+                      name="rsvp_status"
+                      value="Hadir"
+                      required
+                      class="mr-3"
+                    />
+                    <span class="font-medium text-white">✓ Yes</span>
+                  </label>
+                  <label
+                    class="flex items-center justify-center p-4 border-2 border-white/30 cursor-pointer hover:border-white transition bg-white/5"
+                  >
+                    <input
+                      type="radio"
+                      name="rsvp_status"
+                      value="Tidak Hadir"
+                      required
+                      class="mr-3"
+                    />
+                    <span class="font-medium text-white">✗ No</span>
+                  </label>
+                </div>
+              </div>
 
-            if (timeLeft <= 0) {
-                return clearInterval(interval);
-            }
+              <div
+                id="attendance-count-container"
+                class="hidden"
+                data-aos="fade-up"
+                data-aos-delay="200"
+              >
+                <label class="block text-white mb-3 font-medium tracking-wide"
+                  >Number of Guests</label
+                >
+                <input
+                  type="number"
+                  id="attendance-count"
+                  min="1"
+                  max="5"
+                  value="1"
+                  class="w-full px-4 py-3 bg-white/10 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:border-white"
+                />
+                <p class="text-sm text-white/60 mt-2">
+                  Maximum 5 guests per invitation
+                </p>
+              </div>
 
-            const particleCount = 50 * (timeLeft / duration);
-            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
-            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
-        }, 250);
-    }
-}
+              <div class="w-full h-px bg-white/20 my-6"></div>
 
-// Call advanced initializers
-document.addEventListener('DOMContentLoaded', () => {
-    initAdvancedAnimations();
-});
+              <button
+                type="submit"
+                class="w-full bg-white text-black py-4 text-sm tracking-widest uppercase hover:bg-gray-200 transition font-semibold btn-shimmer"
+                data-aos="zoom-in"
+                data-aos-delay="300"
+              >
+                <i class="fas fa-check mr-2"></i>Confirm Attendance
+              </button>
+            </form>
+            </div>
+          </div>
+          <!-- Parallax Decoration -->
+          <div class="absolute -z-10 bottom-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-white/5 rounded-full blur-3xl parallax-el" data-parallax-speed="-0.05"></div>
+        </div>
+      </section>
+
+      <!-- ============================================ -->
+      <!-- 8. WISHES SECTION -->
+      <!-- ============================================ -->
+      <section id="wishes" class="relative py-20 px-4">
+        <div class="absolute inset-0 bg-black/50"></div>
+
+        <div class="max-w-4xl mx-auto relative z-10">
+          <!-- Section Title -->
+          <div class="text-center mb-12" data-aos="fade-up">
+            <div class="w-24 h-px bg-white mx-auto mb-6"></div>
+            <h3
+              class="font-serif text-4xl md:text-5xl text-white mb-4 tracking-wide text-reveal-kinetic"
+            >
+              <span>Wishes</span>
+            </h3>
+            <p class="text-white/60 text-sm tracking-[0.2em] uppercase mb-6">Prayers and Love</p>
+            <p class="text-white/80 text-base md:text-lg">
+              Leave your heartfelt wishes for the couple
+            </p>
+            <div class="w-24 h-px bg-white mx-auto mt-6"></div>
+          </div>
+
+          <!-- FORM UCAPAN -->
+          <div
+            class="bg-white/10 backdrop-blur-md border border-white/20 p-8 md:p-12 shadow-2xl tilt-card"
+            data-aos="zoom-in"
+          >
+            <div class="tilt-content">
+            <form id="wish-form" class="space-y-5">
+              <div data-aos="fade-up" data-aos-delay="100">
+                <label class="block text-white mb-3 font-medium tracking-wide"
+                  >Your Name</label
+                >
+                <input
+                  type="text"
+                  id="wish-name"
+                  required
+                  class="w-full px-4 py-3 bg-white/10 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:border-white"
+                  placeholder="Enter your name"
+                />
+              </div>
+              <div data-aos="fade-up" data-aos-delay="200">
+                <label class="block text-white mb-3 font-medium tracking-wide"
+                  >Your Wishes</label
+                >
+                <textarea
+                  id="wish-message"
+                  rows="4"
+                  required
+                  class="w-full px-4 py-3 bg-white/10 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:border-white resize-none"
+                  placeholder="Write your wishes and prayers..."
+                ></textarea>
+              </div>
+              <div class="w-full h-px bg-white/20"></div>
+              <button
+                type="submit"
+                class="w-full bg-white text-black py-4 text-sm tracking-widest uppercase hover:bg-gray-200 transition font-semibold btn-shimmer"
+                data-aos="zoom-in"
+                data-aos-delay="300"
+              >
+                <i class="fas fa-paper-plane mr-2"></i>Send Wishes
+              </button>
+            </form>
+            </div>
+          </div>
+
+          <!-- DISPLAY UCAPAN -->
+          <!-- DISPLAY UCAPAN -->
+          <div class="mt-20 pt-16 border-t border-white/20 space-y-6" id="wishes-container">
+            <!-- Wishes will be loaded here -->
+            <div class="text-center text-white/60 py-8">
+              <i class="fas fa-spinner fa-spin text-2xl"></i>
+              <p class="mt-2 tracking-wide">Loading wishes...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================ -->
+      <!-- 9. GIFT BOX / AMPLOP DIGITAL -->
+      <!-- ============================================ -->
+      <section id="gift" class="relative py-20 px-4">
+        <div class="absolute inset-0 bg-black/60"></div>
+
+        <div class="max-w-3xl mx-auto text-center relative z-10">
+          <!-- Section Title -->
+          <div class="mb-12" data-aos="fade-up">
+            <div class="w-24 h-px bg-white mx-auto mb-6"></div>
+            <h3
+              class="font-serif text-4xl md:text-5xl text-white mb-4 tracking-wide text-reveal-kinetic"
+            >
+              <span>Gift Box</span>
+            </h3>
+            <p class="text-white/60 text-sm tracking-[0.2em] uppercase mb-6">Digital Envelope</p>
+            <p
+              class="text-white/80 text-base md:text-lg max-w-2xl mx-auto leading-relaxed"
+            >
+              Your presence and prayers are the greatest gifts. However, if you
+              wish to honor us with a gift, you may send it through:
+            </p>
+            <div class="w-24 h-px bg-white mx-auto mt-6"></div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <!-- BANK 1 -->
+            <div
+              class="bg-white/10 backdrop-blur-sm border border-white/20 p-8 text-center card-hover tilt-card"
+              data-aos="fade-up"
+            >
+              <div class="mb-6 tilt-content">
+                <div class="h-12 flex items-center justify-center">
+                  <p
+                    class="text-white text-2xl font-bold tracking-wider animate-floating"
+                  >
+                    BANK BCA
+                  </p>
+                </div>
+              </div>
+              <div class="w-16 h-px bg-white mx-auto mb-6"></div>
+              <div data-aos="fade-up" data-aos-delay="200">
+                <p class="text-white/70 mb-2 tracking-wide">Account Name</p>
+                <p class="text-white font-semibold text-lg mb-1">
+                  Mella Anaya Rahmani
+                </p>
+              </div>
+              <div data-aos="fade-up" data-aos-delay="400">
+                <p class="text-white/70 mb-2 tracking-wide text-sm mt-4">
+                  Account Number
+                </p>
+                <p
+                  class="text-3xl font-bold text-white mb-6 tracking-wide"
+                  id="bank1-number"
+                >
+                  4110920917
+                </p>
+              </div>
+              <div class="w-16 h-px bg-white mx-auto mb-6"></div>
+              <button
+                id="bank1-btn"
+                onclick="copyToClipboard('4110920917', 'bank1')"
+                class="btn-copy bg-white text-black px-8 py-3 text-sm tracking-widest uppercase transition btn-shimmer"
+                data-aos="zoom-in"
+                data-aos-delay="600"
+              >
+                <i class="fas fa-copy" style="margin-right: 6px"></i>Copy Number
+              </button>
+            </div>
+
+            <!-- BANK 2 -->
+            <div
+              class="bg-white/10 backdrop-blur-sm border border-white/20 p-8 text-center card-hover tilt-card"
+              data-aos="fade-up"
+              data-aos-delay="100"
+            >
+              <div class="mb-6 tilt-content">
+                <div class="h-12 flex items-center justify-center">
+                  <p
+                    class="text-white text-2xl font-bold tracking-wider animate-floating"
+                  >
+                    BANK BNI
+                  </p>
+                </div>
+              </div>
+              <div class="w-16 h-px bg-white mx-auto mb-6"></div>
+              <div data-aos="fade-up" data-aos-delay="300">
+                <p class="text-white/70 mb-2 tracking-wide">Account Name</p>
+                <p class="text-white font-semibold text-lg mb-1">
+                  Bram Aji Saka Putra
+                </p>
+              </div>
+              <div data-aos="fade-up" data-aos-delay="500">
+                <p class="text-white/70 mb-2 tracking-wide text-sm mt-4">
+                  Account Number
+                </p>
+                <p
+                  class="text-3xl font-bold text-white mb-6 tracking-wide"
+                  id="bank2-number"
+                >
+                  0834323230
+                </p>
+              </div>
+              <div class="w-16 h-px bg-white mx-auto mb-6"></div>
+              <button
+                id="bank2-btn"
+                onclick="copyToClipboard('0834323230', 'bank2')"
+                class="btn-copy bg-white text-black px-8 py-3 text-sm tracking-widest uppercase transition btn-shimmer"
+                data-aos="zoom-in"
+                data-aos-delay="700"
+              >
+                <i class="fas fa-copy" style="margin-right: 6px"></i>Copy Number
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================ -->
+      <!-- THANK YOU -->
+      <!-- ============================================ -->
+      <section id="thankyou" class="relative py-24 text-center px-4">
+        <div class="absolute inset-0 bg-black/70"></div>
+
+        <div class="max-w-3xl mx-auto relative z-10" data-aos="fade-up">
+          <div
+            class="w-24 h-px bg-white mx-auto mb-8"
+            data-aos="fade-right"
+            data-aos-delay="100"
+          ></div>
+
+
+
+          <h3
+            class="font-script text-5xl md:text-7xl text-white mb-6 leading-tight text-glow text-reveal-kinetic"
+            data-aos="zoom-in"
+            data-aos-delay="400"
+          >
+            <span>Thank You</span>
+          </h3>
+          <p class="text-white/60 text-sm tracking-[0.2em] uppercase mb-8" data-aos="fade-up">With Sincere Gratitude</p>
+
+
+          <div class="flex flex-col items-center justify-center gap-4 mb-8" data-aos="zoom-in" data-aos-delay="600">
+            <i class="fas fa-heart text-white text-3xl animate-floating"></i>
+          </div>
+
+          <div
+            class="w-24 h-px bg-white mx-auto mb-8"
+            data-aos="fade-left"
+            data-aos-delay="500"
+          ></div>
+
+          <p
+            class="text-white/90 text-base md:text-lg leading-relaxed mb-8 max-w-2xl mx-auto"
+            data-aos="fade-up"
+            data-aos-delay="600"
+          >
+            It is an honor and happiness for us if you are willing to attend and
+            give your blessing to us. Your presence means the world to us.
+          </p>
+
+          <p
+            class="font-serif text-2xl md:text-3xl text-white mb-8"
+            data-aos="fade-up"
+            data-aos-delay="700"
+          >
+            Wassalamualaikum Warahmatullahi Wabarakatuh
+          </p>
+
+          <div
+            class="w-24 h-px bg-white mx-auto mb-8"
+            data-aos="fade-up"
+            data-aos-delay="800"
+          ></div>
+
+          <div class="mt-12" data-aos="zoom-in" data-aos-delay="900">
+            <p class="text-white/70 text-sm tracking-widest uppercase mb-4">
+              With Love,
+            </p>
+            <p class="font-script text-4xl md:text-5xl text-white">
+              Mella & Bram
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================ -->
+      <!-- 10. FOOTER -->
+      <!-- ============================================ -->
+      <footer
+        class="relative bg-black/80 text-white text-center py-8 px-4 border-t border-white/10"
+      >
+        <div class="max-w-4xl mx-auto">
+          <div class="w-16 h-px bg-white/30 mx-auto mb-6"></div>
+
+          <p class="text-sm tracking-wide mb-2">
+            Made with <i class="fas fa-heart text-red-400 mx-1"></i> for Mella &
+            Bram
+          </p>
+          <p class="text-xs text-white/50 tracking-wider">
+            © 2026 Wedding Invitation. All rights reserved.
+          </p>
+
+          <div class="w-16 h-px bg-white/30 mx-auto mt-6"></div>
+        </div>
+      </footer>
+    </main>
+
+    <!-- ============================================ -->
+    <!-- FLOATING MUSIC PLAYER -->
+    <!-- ============================================ -->
+    <button
+      id="music-toggle"
+      class="hidden fixed bottom-6 right-6 z-30 bg-white text-black w-14 h-14 shadow-2xl hover:bg-gray-200 transition flex items-center justify-center border-2 border-black/10"
+    >
+      <i class="fas fa-music" id="music-icon"></i>
+    </button>
+
+    <!-- Hidden Audio Element -->
+    <audio id="background-music" loop>
+      <source src="assets/audio/song.mp3" type="audio/mpeg" />
+    </audio>
+
+    <!-- ============================================ -->
+    <!-- LIGHTBOX MODAL -->
+    <!-- ============================================ -->
+    <div id="lightbox" class="lightbox">
+      <span class="lightbox-close">&times;</span>
+      <div class="lightbox-content">
+        <img
+          id="lightbox-img"
+          class="lightbox-image"
+          src=""
+          alt="Lightbox Image"
+        />
+      </div>
+      <a class="lightbox-prev">&#10094;</a>
+      <a class="lightbox-next">&#10095;</a>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SCRIPTS -->
+    <!-- ============================================ -->
+
+    <!-- AOS Animation -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
+    <!-- Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Custom Scripts (defer: parsed after HTML, before DOMContentLoaded) -->
+    <script src="js/config.js" defer></script>
+    <script src="js/utils.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/main.js" defer></script>
+  </body>
+</html>
