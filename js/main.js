@@ -50,10 +50,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 await loadWishes();
             }
             
-            // Setup heart rain in background
-            if (typeof generateHearts === 'function') {
-                generateHearts();
-            }
+            // Setup lazy load for gallery images
             
             // Setup lazy load for gallery images
             setupLazyLoad();
@@ -273,8 +270,7 @@ function initEventListeners() {
     // Typewriter Quotes Observer
     initTypewriterEffect();
     
-    // Heart Rain for Cover
-    initHeartRain();
+    // Heart Rain removed
     
     log('Event listeners initialized ✓');
 }
@@ -390,41 +386,7 @@ function initTypewriterEffect() {
     });
 }
 
-// ============================================
-// 8.7 HEART RAIN EFFECT
-// ============================================
-function initHeartRain() {
-    const container = document.getElementById('heart-container');
-    if (!container) return;
-
-    function createHeart() {
-        const heart = document.createElement('i');
-        heart.classList.add('fas', 'fa-heart', 'falling-heart');
-        
-        // Random position, size, and duration
-        const left = Math.random() * 100;
-        const size = Math.random() * 15 + 10;
-        const duration = Math.random() * 5 + 5;
-        const opacity = Math.random() * 0.4 + 0.1;
-        
-        heart.style.left = `${left}%`;
-        heart.style.fontSize = `${size}px`;
-        heart.style.animationDuration = `${duration}s`;
-        heart.style.opacity = opacity;
-        
-        container.appendChild(heart);
-        
-        // Remove after animation ends
-        setTimeout(() => {
-            heart.remove();
-        }, duration * 1000);
-    }
-
-    // Create hearts periodically
-    const heartInterval = setInterval(() => {
-        createHeart();
-    }, 400);
-}
+// Heart rain effect removed
 
 // ============================================
 // 9. OPEN INVITATION
@@ -442,7 +404,7 @@ function openInvitation() {
             particleCount: 150,
             spread: 80,
             origin: { y: 0.6 },
-            colors: ['#ffffff', '#f5f5f5', '#d4af37'],
+            colors: ['#ffffff', '#f8f8f8', '#eeeeee'],
             disableForReducedMotion: true
         });
     }
@@ -722,7 +684,7 @@ async function handleRSVPSubmit(event) {
                         particleCount: 150,
                         spread: 70,
                         origin: { y: 0.6 },
-                        colors: ['#D4AF37', '#ffffff']
+                        colors: ['#ffffff', '#cccccc']
                     });
                 }
             }
@@ -811,7 +773,7 @@ async function handleWishSubmit(event) {
                         particleCount: 100,
                         spread: 60,
                         origin: { y: 0.8 },
-                        colors: ['#D4AF37', '#ffffff']
+                        colors: ['#ffffff', '#cccccc']
                     });
                 }
             }
