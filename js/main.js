@@ -265,7 +265,7 @@ function initEventListeners() {
     initLightbox();
     
     // Confetti Observer (Thank You Section)
-    initConfettiObserver();
+    // initConfettiObserver(); // Confetti observer disabled per user request
     
     // Typewriter Quotes Observer
     initTypewriterEffect();
@@ -397,17 +397,8 @@ function openInvitation() {
     const cover = document.getElementById('cover');
     const mainContent = document.getElementById('main-content');
     const musicToggle = document.getElementById('music-toggle'); // Original line
-    
-    // Trigger confetti explosion
-    if (typeof confetti === 'function') {
-        confetti({
-            particleCount: 150,
-            spread: 80,
-            origin: { y: 0.6 },
-            colors: ['#ffffff', '#f8f8f8', '#eeeeee'],
-            disableForReducedMotion: true
-        });
-    }
+        // Confetti animation removed as per user request.
+        // Previously triggered an explosion effect here.
     
     // Hide cover
     if (cover) {
@@ -678,15 +669,8 @@ async function handleRSVPSubmit(event) {
                 showNotification(result.message, 'info');
             } else {
                 showNotification(CONFIG.MESSAGES.success.rsvp, 'success');
-                // Luxury Touch: Confetti on success
-                if (typeof confetti === 'function') {
-                    confetti({
-                        particleCount: 150,
-                        spread: 70,
-                        origin: { y: 0.6 },
-                        colors: ['#ffffff', '#cccccc']
-                    });
-                }
+                // Confetti on RSVP success removed as per user request.
+                // Previously triggered confetti celebration here.
             }
             
             // Update current guest data
@@ -767,15 +751,8 @@ async function handleWishSubmit(event) {
                 showNotification(result.message, 'info');
             } else {
                 showNotification(CONFIG.MESSAGES.success.wish, 'success');
-                // Luxury Touch: Confetti on success
-                if (typeof confetti === 'function') {
-                    confetti({
-                        particleCount: 100,
-                        spread: 60,
-                        origin: { y: 0.8 },
-                        colors: ['#ffffff', '#cccccc']
-                    });
-                }
+                // Confetti on wish submit removed as per user request.
+                // Previously triggered confetti celebration here.
             }
             
             // Clear form
