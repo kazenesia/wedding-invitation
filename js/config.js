@@ -94,7 +94,7 @@ const CONFIG = {
         title: 'Resepsi',
         icon: 'fa-glass-cheers',
         date: 'Minggu, 23 Februari 2026',
-        time: '14.00 - 21.00 WIB',
+        time: '16.00 WIB - Selesai',
         venue: 'Kediaman Mempelai Wanita',
         address: 'Dusun Mlaten Gg. II RT 01 RW 02 Karangrejo, Gempol, Pasuruan, Jawa Timur 67155',
         addressShort: 'Gempol, Pasuruan',
